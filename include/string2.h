@@ -2,6 +2,7 @@
 #define STRING2_H
 
 #include <stdint.h>
+#include <unistd.h>
 
 typedef struct string {
   uint32_t len;

@@ -8,6 +8,11 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 #include "string2.h"
 #include "commandline.h"
 

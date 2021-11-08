@@ -1,5 +1,4 @@
 #include "string2.h"
-#include <unistd.h>
 
 int create_string(string *dest, int len, char *str) {
     dest->len = len;

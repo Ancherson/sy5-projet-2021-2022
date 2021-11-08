@@ -96,16 +96,26 @@ int main(int argc, char * argv[]) {
   free(str);
 
   commandline *cmd = malloc(sizeof(commandline));
-  string *tab = malloc(sizeof(string) * argc);
-  for(int i = 0; i < argc; i++) {
-    create_string(tab + i, strlen(argv[i]), argv[i]);
+  string *tab = malloc(sizeof(string) * (argc - 1));
+  for(int i = 1; i < argc; i++) {
+    create_string(tab + (i - 1), strlen(argv[i]), argv[i]);
   }
-  create_commandline(cmd, argc, tab);
+  create_commandline(cmd, argc - 1, tab);
   printf("%d ", cmd->argc);
   for(int i = 0; i < cmd->argc; i++) {
     printf("(%s %d) ", cmd->argv[i].str, cmd->argv[i].len);
   }
   printf("\n");
+
+  //Test write commandline
+  int fd = open("test", O_WRONLY | O_TRUNC | O_CREAT, 0750);
+  if(fd < 0) {
+    perror("PBM OPEN TEST");
+    return 1;
+  }
+  operation = 0x4352;
+  write(fd, &operation, sizeof(uint16_t));
+  write_commandline(fd, *cmd);
   free(cmd);
   
   return EXIT_SUCCESS;
