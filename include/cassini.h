@@ -6,6 +6,11 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdint.h>
+
+#include "string2.h"
+#include "commandline.h"
+
 
 #include "client-request.h"
 #include "server-reply.h"

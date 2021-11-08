@@ -3,13 +3,13 @@
 
 #include <stdint.h>
 
-#include "string.h"
-
-struct commandline {
+#include "string2.h"
+typedef struct string string;
+typedef struct commandline {
   uint32_t argc;
   string *argv;
-};
+} commandline;
 
-int create_commandline(struct commandline *dest, uint32_t argc, string *argv);
+int create_commandline(commandline *dest, uint32_t argc, string *argv);
 
 #endif // COMMANDLINE

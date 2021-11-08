@@ -88,6 +88,25 @@ int main(int argc, char * argv[]) {
   // --------
   // | TODO |
   // --------
+
+  //Test
+  string *str = malloc(sizeof(string));
+  create_string(str, 3, "BON");
+  printf("%s %d\n", str->str, str->len);
+  free(str);
+
+  commandline *cmd = malloc(sizeof(commandline));
+  string *tab = malloc(sizeof(string) * argc);
+  for(int i = 0; i < argc; i++) {
+    create_string(tab + i, strlen(argv[i]), argv[i]);
+  }
+  create_commandline(cmd, argc, tab);
+  printf("%d ", cmd->argc);
+  for(int i = 0; i < cmd->argc; i++) {
+    printf("(%s %d) ", cmd->argv[i].str, cmd->argv[i].len);
+  }
+  printf("\n");
+  free(cmd);
   
   return EXIT_SUCCESS;
 
