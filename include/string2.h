@@ -9,5 +9,6 @@ typedef struct string {
 } string; 
 
 int create_string(string *dest, int len, char *str);
+int write_string(int fd, string str);
 
 #endif // STRING2_H
