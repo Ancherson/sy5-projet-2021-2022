@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <stdint.h>
 
-//includes pour open
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
