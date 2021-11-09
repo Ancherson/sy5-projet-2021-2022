@@ -8,9 +8,14 @@
 #include <errno.h>
 #include <stdint.h>
 
+//includes pour open
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include "string2.h"
 #include "commandline.h"
-
+#include "write-request.h"
 
 #include "client-request.h"
 #include "server-reply.h"

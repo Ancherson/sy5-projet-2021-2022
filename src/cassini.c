@@ -107,6 +107,10 @@ int main(int argc, char * argv[]) {
   }
   printf("\n");
   free(cmd);
+
+  int fd = open("test", O_CREAT | O_WRONLY | O_TRUNC, 0777);
+  write_opcode(fd, CLIENT_REQUEST_CREATE_TASK);
+
   
   return EXIT_SUCCESS;
 
