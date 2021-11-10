@@ -114,9 +114,11 @@ int main(int argc, char * argv[]) {
     return 1;
   }
   operation = 0x4352;
-  write(fd, &operation, sizeof(uint16_t));
+  //write(fd, &operation, sizeof(uint16_t));
+  write_opcode(fd, CLIENT_REQUEST_CREATE_TASK);
   write_commandline(fd, *cmd);
   free(cmd);
+
   
   return EXIT_SUCCESS;
 
