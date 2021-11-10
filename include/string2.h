@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <unistd.h>
+#include "convert-uint.h"
 
 typedef struct string {
   uint32_t len;

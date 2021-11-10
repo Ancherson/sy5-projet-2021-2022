@@ -1,5 +1,5 @@
-cassini: cassini.o commandline.o string2.o timing-text-io.o write-request.o convert-uint.o
-	gcc cassini.o commandline.o string2.o timing-text-io.o write-request.o -o cassini
+cassini: cassini.o convert-uint.o commandline.o string2.o timing-text-io.o write-request.o 
+	gcc convert-uint.o cassini.o commandline.o string2.o timing-text-io.o write-request.o -o cassini
 
 cassini.o: src/cassini.c
 	gcc -c -Iinclude -Wall src/cassini.c

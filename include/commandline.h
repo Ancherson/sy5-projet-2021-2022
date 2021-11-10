@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "string2.h"
+#include "convert-uint.h"
 
 typedef struct string string;
 typedef struct commandline {

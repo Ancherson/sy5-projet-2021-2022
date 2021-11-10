@@ -7,7 +7,8 @@ int create_commandline(struct commandline *dest, uint32_t argc, string *argv){
 }
 
 int write_commandline(int fd, commandline cmd) {
-    if(write(fd, &(cmd.argc), sizeof(uint32_t)) < sizeof(uint32_t)) return 1;
+    uint32_t argc = reverse_byte32(cmd.argc);
+    if(write(fd, &argc, sizeof(uint32_t)) < sizeof(uint32_t)) return 1;
     for(unsigned int i = 0; i < cmd.argc; i++) {
         if(write_string(fd, cmd.argv[i])) return 1;
     }

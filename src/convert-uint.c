@@ -8,6 +8,7 @@ uint16_t reverse_byte16(uint16_t n) {
     r <<= 8;
     return r | (n&mask);
 }
+
 uint32_t reverse_byte32(uint32_t n) {
     uint32_t r = 0x0;
     uint32_t mask = 0x000000ff;
@@ -18,6 +19,8 @@ uint32_t reverse_byte32(uint32_t n) {
     }
     return r | (n&mask);
 }
+
+
 uint64_t reverse_byte64(uint64_t n) {
     uint64_t r = 0x0;
     uint64_t mask = 0x00000000000000ff;
