@@ -1,12 +1,7 @@
 #include "convert-uint.h"
 
 uint16_t reverse_byte16(uint16_t n) {
-    uint32_t r = 0x0;
-    uint32_t mask = 0x00ff;
-    r |= n&mask;
-    n >>= 8;
-    r <<= 8;
-    return r | (n&mask);
+    return (n<<8) | (n>>8);
 }
 
 uint32_t reverse_byte32(uint32_t n) {
