@@ -116,8 +116,9 @@ int main(int argc, char * argv[]) {
   operation = 0x4352;
   //operation = reverse_byte16(operation);
   //write(fd, &operation, sizeof(uint16_t));
-  write_opcode(fd, CLIENT_REQUEST_CREATE_TASK);
-  write_commandline(fd, *cmd);
+  write_opcode(fd, CLIENT_REQUEST_REMOVE_TASK);
+  write_taskid(fd, 0x1a);
+  //write_commandline(fd, *cmd);
   free(cmd);
   
   
