@@ -89,39 +89,43 @@ int main(int argc, char * argv[]) {
   // | TODO |
   // --------
 
-  //Test
-  string *str = malloc(sizeof(string));
-  create_string(str, 3, "BON");
-  printf("%s %d\n", str->str, str->len);
-  free(str);
+  //Ouverture du fichier test -> mais plus tard ouvrir le FIFO
+  int fd = open("test", O_WRONLY | O_CREAT | O_TRUNC, 0750);
+  if(fd == -1) {
+    printf("PBM OUVERTURE TEST !\n");
+    exit(EXIT_FAILURE);
+  }
 
-  commandline *cmd = malloc(sizeof(commandline));
-  string *tab = malloc(sizeof(string) * (argc - 1));
-  for(int i = 1; i < argc; i++) {
-    create_string(tab + (i - 1), strlen(argv[i]), argv[i]);
+  //Dans tous les cas on écrit le opcode
+  if(write_opcode(fd, operation) == 1) {
+    printf("PBM ECRITURE OPCODE !\n");
+    exit(EXIT_FAILURE);
+  } 
+  //Ensuit suivant les cas ...
+  switch(operation) {
+    case CLIENT_REQUEST_REMOVE_TASK :
+    case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
+    case CLIENT_REQUEST_GET_STDOUT :
+    case CLIENT_REQUEST_GET_STDERR :
+      //On écrit en plus le taskid
+      if(write_taskid(fd, taskid) == 1) {
+        printf("PBM ECRITURE TASKID !\n");
+        exit(EXIT_FAILURE);
+      } 
+      break;
+    case CLIENT_REQUEST_CREATE_TASK :
+      //On écrit tous ce qu'il faut la requête create
+      if(write_create(fd, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
+        printf("PBM ECRITURE CREATE !\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
   }
-  create_commandline(cmd, argc - 1, tab);
-  printf("%d ", cmd->argc);
-  for(int i = 0; i < cmd->argc; i++) {
-    printf("(%s %d) ", cmd->argv[i].str, cmd->argv[i].len);
-  }
-  printf("\n");
 
-  //Test write commandline
-  int fd = open("test", O_WRONLY | O_TRUNC | O_CREAT, 0750);
-  if(fd < 0) {
-    perror("PBM OPEN TEST");
-    return 1;
+  if(close(fd) == -1) {
+    perror("PBM CLOSE");
+    exit(EXIT_FAILURE);
   }
-  operation = 0x4352;
-  //operation = reverse_byte16(operation);
-  //write(fd, &operation, sizeof(uint16_t));
-  write_opcode(fd, CLIENT_REQUEST_CREATE_TASK);
-  write_timing(fd, "0", "9,14", "3");
-  write_commandline(fd, *cmd);
-  free(cmd);
-  
-  
   return EXIT_SUCCESS;
 
  error:
