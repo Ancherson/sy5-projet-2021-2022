@@ -12,3 +12,8 @@ int write_timing(int fd, char * minutes_str, char * hours_str, char * daysofweek
     t.hours = reverse_byte32(t.hours);
     return write(fd, &t, sizeof(struct timing));
 }
+    
+int write_taskid(int fd, uint64_t taskid){
+    taskid = reverse_byte64(taskid);
+    return write(fd, &taskid, sizeof(uint64_t));
+}
