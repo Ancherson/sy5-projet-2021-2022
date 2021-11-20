@@ -88,7 +88,44 @@ int main(int argc, char * argv[]) {
   // --------
   // | TODO |
   // --------
-  
+
+  //Ouverture du fichier test -> mais plus tard ouvrir le FIFO
+  int fd = open("test", O_WRONLY | O_CREAT | O_TRUNC, 0750);
+  if(fd == -1) {
+    printf("PBM OUVERTURE TEST !\n");
+    exit(EXIT_FAILURE);
+  }
+
+  //Dans tous les cas on écrit le opcode
+  if(write_opcode(fd, operation) == 1) {
+    printf("PBM ECRITURE OPCODE !\n");
+    exit(EXIT_FAILURE);
+  } 
+  //Ensuit suivant les cas ...
+  switch(operation) {
+    case CLIENT_REQUEST_REMOVE_TASK :
+    case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
+    case CLIENT_REQUEST_GET_STDOUT :
+    case CLIENT_REQUEST_GET_STDERR :
+      //On écrit en plus le taskid
+      if(write_taskid(fd, taskid) == 1) {
+        printf("PBM ECRITURE TASKID !\n");
+        exit(EXIT_FAILURE);
+      } 
+      break;
+    case CLIENT_REQUEST_CREATE_TASK :
+      //On écrit tous ce qu'il faut la requête create
+      if(write_create(fd, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
+        printf("PBM ECRITURE CREATE !\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
+  }
+
+  if(close(fd) == -1) {
+    perror("PBM CLOSE");
+    exit(EXIT_FAILURE);
+  }
   return EXIT_SUCCESS;
 
  error:
