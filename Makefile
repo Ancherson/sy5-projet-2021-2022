@@ -10,13 +10,13 @@ commandline.o: src/commandline.c
 string2.o: src/string2.c
 	gcc -c -Iinclude -Wall src/string2.c
 
-timing-text-io.o:
+timing-text-io.o: src/timing-text-io.c
 	gcc -c -Iinclude -Wall src/timing-text-io.c
 
-write-request.o:
+write-request.o: src/write-request.c
 	gcc -c -Iinclude -Wall src/write-request.c
 
-convert-uint.o:
+convert-uint.o: src/convert-uint.c
 	gcc -c -Iinclude -Wall src/convert-uint.c
 
 distclean:
