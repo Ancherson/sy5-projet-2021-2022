@@ -89,17 +89,63 @@ int main(int argc, char * argv[]) {
   // | TODO |
   // --------
 
-  //Ouverture du fichier test -> mais plus tard ouvrir le FIFO
-  int fd = open("test", O_WRONLY | O_CREAT | O_TRUNC, 0750);
-  if(fd == -1) {
-    printf("PBM OUVERTURE TEST !\n");
-    exit(EXIT_FAILURE);
+  //Si le pipes_directory n'est pas précisé, on choisi /tmp/USER/saturnd/pipes
+  int bool = (pipes_directory == NULL);
+  if(bool) {
+    char *user = getenv("USER");
+    char *dir_pre  = "/tmp/";
+    char *dir_next = "/saturnd/pipes";
+    pipes_directory = malloc(strlen(dir_pre) + strlen(user) + strlen(dir_next) + 1);
+    if(pipes_directory == NULL) {
+      perror("PBM malloc pipes_directory");
+      goto error;
+    }
+    strcpy(pipes_directory, dir_pre);
+    strcat(pipes_directory, user);
+    strcat(pipes_directory, dir_next);
   }
 
+  //Creation des chaines de caractères pour l'ouverture des FIFO
+  char *str_pipe_request = "saturnd-request-pipe";
+  char *str_pipe_reply = "staturnd-reply-pipe";
+
+  char *pipe_request_file = malloc(strlen(pipes_directory) + strlen(str_pipe_request) + 2);
+  if(pipe_request_file == NULL) {
+    perror("PBM malloc pipe_request_file");
+    goto error;
+  }
+  char *pipe_reply_file = malloc(strlen(pipes_directory) + strlen(str_pipe_reply) + 2);
+  if(pipe_request_file == NULL) {
+    perror("PBM malloc pipe_reply_file");
+    goto error;
+  }
+
+  strcpy(pipe_request_file,pipes_directory);
+  strcat(pipe_request_file, "/");
+  strcat(pipe_request_file,str_pipe_request);
+
+  strcpy(pipe_reply_file,pipes_directory);
+  strcat(pipe_reply_file, "/");
+  strcat(pipe_reply_file,str_pipe_reply);
+
+  if(bool) {
+    free(pipes_directory);
+  }
+
+
+  //Ouverture du FIFO request
+  int fd_request = open(pipe_request_file, O_WRONLY, 0750);
+  if(fd_request == -1) {
+    perror("PBM OUVERTURE PIPE !\n");
+    goto error;
+  }
+
+  free(pipe_request_file);
+
   //Dans tous les cas on écrit le opcode
-  if(write_opcode(fd, operation) == 1) {
+  if(write_opcode(fd_request, operation) == 1) {
     printf("PBM ECRITURE OPCODE !\n");
-    exit(EXIT_FAILURE);
+    goto error;
   } 
   //Ensuit suivant les cas ...
   switch(operation) {
@@ -108,30 +154,45 @@ int main(int argc, char * argv[]) {
     case CLIENT_REQUEST_GET_STDOUT :
     case CLIENT_REQUEST_GET_STDERR :
       //On écrit en plus le taskid
-      if(write_taskid(fd, taskid) == 1) {
+      if(write_taskid(fd_request, taskid) == 1) {
         printf("PBM ECRITURE TASKID !\n");
-        exit(EXIT_FAILURE);
+        goto error;
       } 
       break;
     case CLIENT_REQUEST_CREATE_TASK :
       //On écrit tous ce qu'il faut la requête create
-      if(write_create(fd, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
+      if(write_create(fd_request, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
         printf("PBM ECRITURE CREATE !\n");
-        exit(EXIT_FAILURE);
+        goto error;
       }
       break;
   }
 
-  if(close(fd) == -1) {
+  //Fermeture du FIFO request
+  if(close(fd_request) == -1) {
     perror("PBM CLOSE");
-    exit(EXIT_FAILURE);
+    goto error;
   }
+
+  free(pipe_reply_file);
+
+  //Ouverture du FIFO reply
+  // int fd_reply = open(pipe_reply_file, O_RDONLY);
+  // if(fd_reply == -1) {
+  //   perror("PBM OPEN REPLY");
+  //   goto error;
+  // }
+
+  //Toute la partie où on read le reste
+
   return EXIT_SUCCESS;
 
  error:
   if (errno != 0) perror("main");
   free(pipes_directory);
   pipes_directory = NULL;
+  free(pipe_request_file);
+  free(pipe_reply_file);
   return EXIT_FAILURE;
 }
 
