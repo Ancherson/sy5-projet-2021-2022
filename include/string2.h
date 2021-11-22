@@ -13,8 +13,6 @@ typedef struct string {
 } string; 
 
 int create_string(string *dest, int len, char *str);
-string *create_string_alloc(int len);
-void free_string(string *s);
 int write_string(int fd, string str);
 
 #endif // STRING2_H
