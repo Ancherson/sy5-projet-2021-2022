@@ -1,29 +1,56 @@
 #include "read-request.h"
 
-int read_timing(int fd, timing *t){
-    if(read(fd, t, TIMING_SIZE) < TIMING_SIZE){
+int read_timing(int fd){
+    timing t;
+    if(read(fd, &t, TIMING_SIZE) < TIMING_SIZE){
         perror("Erreur read_timing");
         return 1;
     }
-    t->minutes = reverse_byte64(t->minutes);
-    t->hours = reverse_byte32(t->hours);
+    t.minutes = reverse_byte64(t.minutes);
+    t.hours = reverse_byte32(t.hours);
+    char s[TIMING_TEXT_MIN_BUFFERSIZE];
+    if(timing_string_from_timing(s, &t) == 1) {
+        printf("Erreur read_timing timing_string_from_timing\n");
+        return 1;
+    }
+    printf("%s", s);
     return 0;
 }
 
-string *read_string(int fd){
+int read_string(int fd){
     uint32_t len;
     if(read(fd, &len, sizeof(uint32_t)) < sizeof(uint32_t)){
         perror("Erreur read_string lecture de la taille de la string");
-        return NULL;
+        return 1;
     }
-    string *s = create_string_alloc(len);
-    if(s == NULL){
-        perror("Erreur read_string create_string_alloc");
-        return NULL;
+    len = reverse_byte32(len);
+
+    char str[len + 1];
+    if(read(fd, str, len) < len) {
+        perror("read_string string");
+        return 1;
     }
-    if(read(fd, s->str, len) < len){
-        perror("Erreur read_string");
-        return NULL;
+    str[len] = '\0';
+
+    printf("%s", str);
+    return 0;
+}
+
+int read_commandline(int fd) {
+    uint32_t argc;
+    if(read(fd, &argc, sizeof(uint32_t)) < sizeof(uint32_t)){
+        perror("Erreur read_commandline lecture du nombre d'argument");
+        return 1;
     }
-    return s;
+    argc = reverse_byte32(argc);
+    
+    for(unsigned int i = 0; i < argc; i++) {
+        if(read_string(fd)) {
+            printf("Erreur read_commandline read_string\n");
+            return 1;
+        }
+        printf(" ");
+    }
+
+    return 0;
 }
