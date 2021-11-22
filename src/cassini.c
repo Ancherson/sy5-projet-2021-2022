@@ -151,9 +151,6 @@ int main(int argc, char * argv[]) {
     exit(EXIT_FAILURE);
   }
   
-
-  printf("%s\n", pipe_request_file);
-  printf("%s\n", pipe_reply_file);
   //Ouverture du FIFO request
   int fd_request = open(pipe_request_file, O_WRONLY, 0750);
   if(fd_request == -1) {
