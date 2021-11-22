@@ -19,6 +19,60 @@ const char usage_info[] = "\
      -p PIPES_DIR -> look for the pipes in PIPES_DIR (default: /tmp/<USERNAME>/saturnd/pipes)\n\
 ";
 
+int get_pipes_file(char *pipes_directory, char **pipe_request, char **pipe_reply) {
+  //Si le pipes_directory n'est pas précisé, on choisi /tmp/USER/saturnd/pipes
+  if(pipes_directory == NULL) {
+    char *user = getenv("USER");
+    char *dir_pre  = "/tmp/";
+    char *dir_next = "/saturnd/pipes";
+    pipes_directory = malloc(strlen(dir_pre) + strlen(user) + strlen(dir_next) + 1);
+    if(pipes_directory == NULL) {
+      perror("PBM malloc pipes_directory");
+      return 1;
+    }
+    strcpy(pipes_directory, dir_pre);
+    strcat(pipes_directory, user);
+    strcat(pipes_directory, dir_next);
+    pipes_directory[strlen(dir_pre) + strlen(user) + strlen(dir_next)] = '\0';
+  }
+
+  //Creation des chaines de caractères pour l'ouverture des FIFO
+  char *str_pipe_request = "saturnd-request-pipe";
+  char *str_pipe_reply = "staturnd-reply-pipe";
+
+  char *pipe_request_file = malloc(strlen(pipes_directory) + strlen(str_pipe_request) + 2);
+  if(pipe_request_file == NULL) {
+    perror("PBM malloc pipe_request_file");
+    free(pipes_directory);
+    return 1;
+  }
+
+  char *pipe_reply_file = malloc(strlen(pipes_directory) + strlen(str_pipe_reply) + 2);
+  if(pipe_request_file == NULL) {
+    perror("PBM malloc pipe_reply_file");
+    free(pipes_directory);
+    free(pipe_request_file);
+    return 1;
+  }
+
+  strcpy(pipe_request_file,pipes_directory);
+  strcat(pipe_request_file, "/");
+  strcat(pipe_request_file,str_pipe_request);
+  pipe_request_file[strlen(pipes_directory) + strlen(str_pipe_request) + 1] = '\0';
+
+  strcpy(pipe_reply_file,pipes_directory);
+  strcat(pipe_reply_file, "/");
+  strcat(pipe_reply_file,str_pipe_reply);
+  pipe_reply_file[strlen(pipes_directory) + strlen(str_pipe_reply) + 1] = '\0';
+
+  free(pipes_directory);
+
+  *pipe_request = pipe_request_file;
+  *pipe_reply = pipe_reply_file;
+
+  return 0;
+}
+
 int main(int argc, char * argv[]) {
   errno = 0;
   
@@ -89,55 +143,27 @@ int main(int argc, char * argv[]) {
   // | TODO |
   // --------
 
-  //Si le pipes_directory n'est pas précisé, on choisi /tmp/USER/saturnd/pipes
-  int bool = (pipes_directory == NULL);
-  if(bool) {
-    char *user = getenv("USER");
-    char *dir_pre  = "/tmp/";
-    char *dir_next = "/saturnd/pipes";
-    pipes_directory = malloc(strlen(dir_pre) + strlen(user) + strlen(dir_next) + 1);
-    if(pipes_directory == NULL) {
-      perror("PBM malloc pipes_directory");
-      goto error;
-    }
-    strcpy(pipes_directory, dir_pre);
-    strcat(pipes_directory, user);
-    strcat(pipes_directory, dir_next);
-  }
-
   //Creation des chaines de caractères pour l'ouverture des FIFO
-  char *str_pipe_request = "saturnd-request-pipe";
-  char *str_pipe_reply = "staturnd-reply-pipe";
-
-  char *pipe_request_file = malloc(strlen(pipes_directory) + strlen(str_pipe_request) + 2);
-  if(pipe_request_file == NULL) {
-    perror("PBM malloc pipe_request_file");
-    goto error;
+  char *pipe_request_file = NULL;
+  char *pipe_reply_file = NULL;
+  if(get_pipes_file(pipes_directory, &pipe_request_file, &pipe_reply_file)) {
+    printf("Erreur construction chaine de caractere des fichiers pipes\n");
+    exit(EXIT_FAILURE);
   }
-  char *pipe_reply_file = malloc(strlen(pipes_directory) + strlen(str_pipe_reply) + 2);
-  if(pipe_request_file == NULL) {
-    perror("PBM malloc pipe_reply_file");
-    goto error;
-  }
+  
 
-  strcpy(pipe_request_file,pipes_directory);
-  strcat(pipe_request_file, "/");
-  strcat(pipe_request_file,str_pipe_request);
-
-  strcpy(pipe_reply_file,pipes_directory);
-  strcat(pipe_reply_file, "/");
-  strcat(pipe_reply_file,str_pipe_reply);
-
-  if(bool) {
-    free(pipes_directory);
-  }
-
-
+  printf("%s\n", pipe_request_file);
+  printf("%s\n", pipe_reply_file);
   //Ouverture du FIFO request
   int fd_request = open(pipe_request_file, O_WRONLY, 0750);
   if(fd_request == -1) {
     perror("PBM OUVERTURE PIPE !\n");
-    goto error;
+    if(errno == ENOENT) {
+      printf("Fichier : %s n'existe pas \n", pipe_request_file);
+    }
+    free(pipe_request_file);
+    free(pipe_reply_file);
+    exit(EXIT_FAILURE);
   }
 
   free(pipe_request_file);
@@ -145,7 +171,8 @@ int main(int argc, char * argv[]) {
   //Dans tous les cas on écrit le opcode
   if(write_opcode(fd_request, operation) == 1) {
     printf("PBM ECRITURE OPCODE !\n");
-    goto error;
+    free(pipe_reply_file);
+    exit(EXIT_FAILURE);
   } 
   //Ensuit suivant les cas ...
   switch(operation) {
@@ -156,14 +183,16 @@ int main(int argc, char * argv[]) {
       //On écrit en plus le taskid
       if(write_taskid(fd_request, taskid) == 1) {
         printf("PBM ECRITURE TASKID !\n");
-        goto error;
+        free(pipe_reply_file);
+        exit(EXIT_FAILURE);
       } 
       break;
     case CLIENT_REQUEST_CREATE_TASK :
       //On écrit tous ce qu'il faut la requête create
       if(write_create(fd_request, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
         printf("PBM ECRITURE CREATE !\n");
-        goto error;
+        free(pipe_reply_file);
+        exit(EXIT_FAILURE);
       }
       break;
   }
@@ -171,17 +200,21 @@ int main(int argc, char * argv[]) {
   //Fermeture du FIFO request
   if(close(fd_request) == -1) {
     perror("PBM CLOSE");
-    goto error;
+    free(pipe_reply_file);
+    exit(EXIT_FAILURE);
   }
-
-  free(pipe_reply_file);
 
   //Ouverture du FIFO reply
   // int fd_reply = open(pipe_reply_file, O_RDONLY);
   // if(fd_reply == -1) {
   //   perror("PBM OPEN REPLY");
-  //   goto error;
+  //   if(errno == ENOENT) {
+  //     printf("Fichier : %s n'existe pas \n", pipe_reply_file);
+  //   }
+  //   free(pipe_reply_file);
+  //   exit(EXIT_FAILURE);
   // }
+  free(pipe_reply_file);
 
   //Toute la partie où on read le reste
 
@@ -191,8 +224,6 @@ int main(int argc, char * argv[]) {
   if (errno != 0) perror("main");
   free(pipes_directory);
   pipes_directory = NULL;
-  free(pipe_request_file);
-  free(pipe_reply_file);
   return EXIT_FAILURE;
 }
 
