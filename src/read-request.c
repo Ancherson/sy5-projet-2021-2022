@@ -1,5 +1,16 @@
 #include "read-request.h"
 
+int read_taskid(int fd){
+    uint64_t taskid;
+    if(read(fd, &taskid, sizeof(uint64_t)) < sizeof(uint64_t)){
+        perror("Erreur read_taskid");
+        return 1;
+    }
+    taskid = reverse_byte64(taskid);
+    printf("%llu", taskid);
+    return 0;
+}
+
 int read_timing(int fd){
     timing t;
     if(read(fd, &t, TIMING_SIZE) < TIMING_SIZE){
