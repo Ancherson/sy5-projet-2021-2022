@@ -65,3 +65,31 @@ int read_commandline(int fd) {
 
     return 0;
 }
+
+int read_list(int fd){
+    uint32_t nbtasks;
+    if(read(fd, &nbtasks, sizeof(uint32_t)) < sizeof(uint32_t)){
+        perror("Erreur read_list lecture du nombre de taches");
+        return 1;
+    }
+    nbtasks = reverse_byte32(nbtasks);
+
+    for(unsigned int i = 0; i < nbtasks; i++){
+        if(read_taskid(fd)){
+            printf("Erreur read_list read_taskid\n");
+            return 1;
+        }
+        printf(": ");
+        if(read_timing(fd)){
+            printf("Erreur read_list read_timing\n");
+            return 1;
+        }
+        printf(" ");
+        if(read_commandline(fd)){
+            printf("Erreur read_list read_commandline\n");
+            return 1;
+        }
+        printf("\n");
+    }
+    return 0;
+}
