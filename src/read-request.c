@@ -76,3 +76,17 @@ int print_time (int64_t time){
   printf("%s", buf);
   return 0;
 }
+
+/* -1 if fail
+    1 if it's an 'ER' REPTYPE
+    0 if it's an 'OK' REPTYPE */
+int read_reptype (int fd){
+    uint16_t rep; 
+    if (read(fd,&rep,sizeof(uint16_t)) != sizeof(uint16_t)){
+        perror("read reptype");
+        return -1;
+    }
+    rep = reverse_byte16 (rep);
+    if (rep == SERVER_REPLY_OK) return 0;
+    else return 1;  
+}
