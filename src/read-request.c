@@ -7,7 +7,7 @@ int read_taskid(int fd){
         return 1;
     }
     taskid = reverse_byte64(taskid);
-    printf("%llu", taskid);
+    printf("%lu", taskid);
     return 0;
 }
 
