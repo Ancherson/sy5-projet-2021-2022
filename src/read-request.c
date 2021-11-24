@@ -1,5 +1,23 @@
 #include "read-request.h"
 
+int read_remove(int fd) {
+    int rep = read_reptype(fd);
+    if(rep == 1 || rep == -1) {
+        if(rep == 1) {
+            printf("Erreur Requête Remove\n");
+            uint16_t errcode;
+            if(read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)) {
+                perror("Erreur read errcode read_remove");
+            }
+            if(reverse_byte16(errcode) == SERVER_REPLY_ERROR_NOT_FOUND) {
+                printf("Erreur Task Not Found : Requête Remove\n");
+            }
+        } 
+        return 1;
+    }
+    return 0;
+}
+
 int read_taskid(int fd){
     uint64_t taskid;
     if(read(fd, &taskid, sizeof(uint64_t)) < sizeof(uint64_t)){
