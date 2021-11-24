@@ -13,6 +13,7 @@
 #include "commandline.h"
 #include "server-reply.h"
 
+int read_create(int fd);
 int read_taskid(int fd);
 int read_timing(int fd);
 int read_string(int fd);
