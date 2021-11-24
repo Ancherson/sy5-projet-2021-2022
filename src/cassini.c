@@ -215,16 +215,6 @@ int main(int argc, char * argv[]) {
 
   //Toute la partie où on read le reste
 
-int print_time (int64_t time){
-  struct tm  ts;
-  char buf[80];
-
-  // Format time, "ddd yyyy-mm-dd hh:mm:ss zzz"
-  ts = *localtime(&time);
-  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &ts);
-  printf("%s\n", buf);
-  return 0;
-}
 
   return EXIT_SUCCESS;
 

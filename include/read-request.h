@@ -14,5 +14,7 @@ int read_taskid(int fd);
 int read_timing(int fd);
 int read_string(int fd);
 int read_commandline(int fd);
+int print_time (int64_t);
+
 
 #endif // READ_REQUEST_H
