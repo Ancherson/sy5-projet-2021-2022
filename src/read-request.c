@@ -7,7 +7,7 @@ int read_taskid(int fd){
         return 1;
     }
     taskid = reverse_byte64(taskid);
-    printf("%llu", taskid);
+    printf("%lu", taskid);
     return 0;
 }
 
@@ -64,4 +64,29 @@ int read_commandline(int fd) {
     }
 
     return 0;
+}
+
+int print_time (int64_t time){
+  struct tm  ts;
+  char buf[80];
+
+  // Format time, "ddd yyyy-mm-dd hh:mm:ss zzz"
+  ts = *localtime(&time);
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &ts);
+  printf("%s", buf);
+  return 0;
+}
+
+/* -1 if fail
+    1 if it's an 'ER' REPTYPE
+    0 if it's an 'OK' REPTYPE */
+int read_reptype (int fd){
+    uint16_t rep; 
+    if (read(fd,&rep,sizeof(uint16_t)) != sizeof(uint16_t)){
+        perror("read reptype");
+        return -1;
+    }
+    rep = reverse_byte16 (rep);
+    if (rep == SERVER_REPLY_OK) return 0;
+    else return 1;  
 }
