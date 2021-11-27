@@ -1,5 +1,16 @@
 #include "read-request.h"
 
+int read_create(int fd) {
+    int rep = read_reptype(fd);
+    if(rep == 1 || rep == -1) {
+        if(rep == 1) printf("Erreur Requête Create\n");
+        return 1;
+    }
+    rep = read_taskid(fd);
+    if(rep == 0) printf("\n");
+    return rep;
+}
+
 int read_taskid(int fd){
     uint64_t taskid;
     if(read(fd, &taskid, sizeof(uint64_t)) < sizeof(uint64_t)){
