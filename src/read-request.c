@@ -7,7 +7,7 @@ int read_taskid(int fd){
         return 1;
     }
     taskid = reverse_byte64(taskid);
-    printf("%lu", taskid);
+    printf("%llu", taskid);
     return 0;
 }
 
@@ -89,4 +89,36 @@ int read_reptype (int fd){
     rep = reverse_byte16 (rep);
     if (rep == SERVER_REPLY_OK) return 0;
     else return 1;  
+}
+
+int read_list(int fd){
+    if(read_reptype(fd) != 0){
+        printf("Erreur read_list reptype anormal\n");
+        return 1;
+    }
+    uint32_t nbtasks;
+    if(read(fd, &nbtasks, sizeof(uint32_t)) < sizeof(uint32_t)){
+        perror("Erreur read_list lecture du nombre de taches");
+        return 1;
+    }
+    nbtasks = reverse_byte32(nbtasks);
+
+    for(unsigned int i = 0; i < nbtasks; i++){
+        if(read_taskid(fd)){
+            printf("Erreur read_list read_taskid\n");
+            return 1;
+        }
+        printf(": ");
+        if(read_timing(fd)){
+            printf("Erreur read_list read_timing\n");
+            return 1;
+        }
+        printf(" ");
+        if(read_commandline(fd)){
+            printf("Erreur read_list read_commandline\n");
+            return 1;
+        }
+        printf("\n");
+    }
+    return 0;
 }

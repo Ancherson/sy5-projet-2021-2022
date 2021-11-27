@@ -18,9 +18,8 @@ int read_timing(int fd);
 int read_string(int fd);
 int read_commandline(int fd);
 int read_reptype (int fd);
-
+int read_list(int fd);
 
 int print_time (int64_t time);
-
 
 #endif // READ_REQUEST_H
