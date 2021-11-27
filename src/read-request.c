@@ -99,7 +99,39 @@ int read_reptype (int fd){
     }
     rep = reverse_byte16 (rep);
     if (rep == SERVER_REPLY_OK) return 0;
-    else return 1;  
+    else return 1;
+}
+
+int read_stdout_stderr(int fd){
+    int rep = read_reptype(fd);
+    if(rep == -1){
+        printf("Erreur read_stdout_stderr read_reptype\n");
+        return 1;
+    }
+    if(rep == 0){
+        if(read_string(fd)) {
+            printf("Erreur read_stdout_stderr read_string\n");
+            return 1;
+        }
+        return 0;
+    }
+    if(rep == 1){
+        uint16_t errcode;
+        if (read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)){
+            perror("Erreur read_stdout_stderr read errcode");
+            return 1;
+        }
+        if(errcode == SERVER_REPLY_ERROR_NOT_FOUND){
+            printf("Erreur: il n'existe aucune tâche avec cet identifiant\n");
+        } else if(errcode == SERVER_REPLY_ERROR_NEVER_RUN){
+            printf("Erreur: la tâche n'a pas encore été exécutée au moins une fois\n");
+        } else {
+            printf("Erreur read_stdout_stderr errcode anormal\n");
+        }
+        return 1;
+    }
+    printf("Erreur read_stdout_stderr reptype anormal\n");
+    return 1;
 }
 
 int read_list(int fd){
