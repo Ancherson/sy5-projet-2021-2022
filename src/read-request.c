@@ -1,5 +1,34 @@
 #include "read-request.h"
 
+int read_remove(int fd) {
+    int rep = read_reptype(fd);
+    if(rep == 1 || rep == -1) {
+        if(rep == 1) {
+            printf("Erreur Requête Remove\n");
+            uint16_t errcode;
+            if(read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)) {
+                perror("Erreur read errcode read_remove");
+            }
+            if(reverse_byte16(errcode) == SERVER_REPLY_ERROR_NOT_FOUND) {
+                printf("Erreur Task Not Found : Requête Remove\n");
+            }
+        } 
+        return 1;
+    }
+    return 0;
+}
+
+int read_create(int fd) {
+    int rep = read_reptype(fd);
+    if(rep == 1 || rep == -1) {
+        if(rep == 1) printf("Erreur Requête Create\n");
+        return 1;
+    }
+    rep = read_taskid(fd);
+    if(rep == 0) printf("\n");
+    return rep;
+}
+
 int read_taskid(int fd){
     uint64_t taskid;
     if(read(fd, &taskid, sizeof(uint64_t)) < sizeof(uint64_t)){
@@ -7,7 +36,7 @@ int read_taskid(int fd){
         return 1;
     }
     taskid = reverse_byte64(taskid);
-    printf("%lu", taskid);
+    printf("%llu", taskid);
     return 0;
 }
 
@@ -88,7 +117,7 @@ int read_reptype (int fd){
     }
     rep = reverse_byte16 (rep);
     if (rep == SERVER_REPLY_OK) return 0;
-    else return 1;  
+    else return 1;
 }
 
 int read_terminate(int fd) {
@@ -96,6 +125,70 @@ int read_terminate(int fd) {
     if(rep != 0) {
         printf("Erreur read_terminate Requête\n");
         return 1;
+    }
+    return 0;
+}
+
+int read_stdout_stderr(int fd){
+    int rep = read_reptype(fd);
+    if(rep == -1){
+        printf("Erreur read_stdout_stderr read_reptype\n");
+        return 1;
+    }
+    if(rep == 0){
+        if(read_string(fd)) {
+            printf("Erreur read_stdout_stderr read_string\n");
+            return 1;
+        }
+        return 0;
+    }
+    if(rep == 1){
+        uint16_t errcode;
+        if (read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)){
+            perror("Erreur read_stdout_stderr read errcode");
+            return 1;
+        }
+        if(errcode == SERVER_REPLY_ERROR_NOT_FOUND){
+            printf("Erreur: il n'existe aucune tâche avec cet identifiant\n");
+        } else if(errcode == SERVER_REPLY_ERROR_NEVER_RUN){
+            printf("Erreur: la tâche n'a pas encore été exécutée au moins une fois\n");
+        } else {
+            printf("Erreur read_stdout_stderr errcode anormal\n");
+        }
+        return 1;
+    }
+    printf("Erreur read_stdout_stderr reptype anormal\n");
+    return 1;
+}
+
+int read_list(int fd){
+    if(read_reptype(fd) != 0){
+        printf("Erreur read_list reptype anormal\n");
+        return 1;
+    }
+    uint32_t nbtasks;
+    if(read(fd, &nbtasks, sizeof(uint32_t)) < sizeof(uint32_t)){
+        perror("Erreur read_list lecture du nombre de taches");
+        return 1;
+    }
+    nbtasks = reverse_byte32(nbtasks);
+
+    for(unsigned int i = 0; i < nbtasks; i++){
+        if(read_taskid(fd)){
+            printf("Erreur read_list read_taskid\n");
+            return 1;
+        }
+        printf(": ");
+        if(read_timing(fd)){
+            printf("Erreur read_list read_timing\n");
+            return 1;
+        }
+        printf(" ");
+        if(read_commandline(fd)){
+            printf("Erreur read_list read_commandline\n");
+            return 1;
+        }
+        printf("\n");
     }
     return 0;
 }
