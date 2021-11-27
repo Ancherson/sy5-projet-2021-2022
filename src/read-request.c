@@ -1,5 +1,16 @@
 #include "read-request.h"
 
+int read_create(int fd) {
+    int rep = read_reptype(fd);
+    if(rep == 1 || rep == -1) {
+        if(rep == 1) printf("Erreur Requête Create\n");
+        return 1;
+    }
+    rep = read_taskid(fd);
+    if(rep == 0) printf("\n");
+    return rep;
+}
+
 int read_taskid(int fd){
     uint64_t taskid;
     if(read(fd, &taskid, sizeof(uint64_t)) < sizeof(uint64_t)){
@@ -121,4 +132,36 @@ int read_stdout_stderr(int fd){
     }
     printf("Erreur read_stdout_stderr reptype anormal\n");
     return 1;
+}
+
+int read_list(int fd){
+    if(read_reptype(fd) != 0){
+        printf("Erreur read_list reptype anormal\n");
+        return 1;
+    }
+    uint32_t nbtasks;
+    if(read(fd, &nbtasks, sizeof(uint32_t)) < sizeof(uint32_t)){
+        perror("Erreur read_list lecture du nombre de taches");
+        return 1;
+    }
+    nbtasks = reverse_byte32(nbtasks);
+
+    for(unsigned int i = 0; i < nbtasks; i++){
+        if(read_taskid(fd)){
+            printf("Erreur read_list read_taskid\n");
+            return 1;
+        }
+        printf(": ");
+        if(read_timing(fd)){
+            printf("Erreur read_list read_timing\n");
+            return 1;
+        }
+        printf(" ");
+        if(read_commandline(fd)){
+            printf("Erreur read_list read_commandline\n");
+            return 1;
+        }
+        printf("\n");
+    }
+    return 0;
 }
