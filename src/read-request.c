@@ -120,6 +120,15 @@ int read_reptype (int fd){
     else return 1;
 }
 
+int read_terminate(int fd) {
+    int rep = read_reptype(fd);
+    if(rep != 0) {
+        printf("Erreur read_terminate Requête\n");
+        return 1;
+    }
+    return 0;
+}
+
 int read_stdout_stderr(int fd){
     int rep = read_reptype(fd);
     if(rep == -1){
