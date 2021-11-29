@@ -2,7 +2,7 @@
 
 
 int write_opcode(int fd, uint16_t opcode){
-    opcode = reverse_byte16(opcode);
+    opcode = htobe16(opcode);
     if (write(fd, &opcode, sizeof(uint16_t)) < sizeof(uint16_t)) return 1;
     return 0;
 }
@@ -13,14 +13,14 @@ int write_timing(int fd, char * minutes_str, char * hours_str, char * daysofweek
         printf("Erreur timing_from_strings\n");
         return 1;
     }
-    t.minutes = reverse_byte64(t.minutes);
-    t.hours = reverse_byte32(t.hours);
+    t.minutes = htobe64(t.minutes);
+    t.hours = htobe32(t.hours);
     if (write(fd, &t, TIMING_SIZE) < TIMING_SIZE) return 1;
     return 0;
 }
     
 int write_taskid(int fd, uint64_t taskid){
-    taskid = reverse_byte64(taskid);
+    taskid = htobe64(taskid);
     if (write(fd, &taskid, sizeof(uint64_t)) < sizeof (uint64_t)) return 1;
     return 0;
 }

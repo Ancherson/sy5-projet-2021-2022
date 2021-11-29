@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include<endian.h>
 
 #include "convert-uint.h"
 #include "timing-text-io.h"

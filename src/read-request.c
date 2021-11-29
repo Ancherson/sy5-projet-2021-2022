@@ -9,7 +9,7 @@ int read_remove(int fd) {
             if(read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)) {
                 perror("Erreur read errcode read_remove");
             }
-            if(reverse_byte16(errcode) == SERVER_REPLY_ERROR_NOT_FOUND) {
+            if(be16toh(errcode) == SERVER_REPLY_ERROR_NOT_FOUND) {
                 printf("Erreur Task Not Found : Requête Remove\n");
             }
         } 
@@ -35,8 +35,8 @@ int read_taskid(int fd){
         perror("Erreur read_taskid");
         return 1;
     }
-    taskid = reverse_byte64(taskid);
-    printf("%llu", taskid);
+    taskid = be64toh(taskid);
+    printf("%lu", taskid);
     return 0;
 }
 
@@ -46,8 +46,8 @@ int read_timing(int fd){
         perror("Erreur read_timing");
         return 1;
     }
-    t.minutes = reverse_byte64(t.minutes);
-    t.hours = reverse_byte32(t.hours);
+    t.minutes = be64toh(t.minutes);
+    t.hours = be32toh(t.hours);
     char s[TIMING_TEXT_MIN_BUFFERSIZE];
     if(timing_string_from_timing(s, &t) == 1) {
         printf("Erreur read_timing timing_string_from_timing\n");
@@ -63,7 +63,7 @@ int read_string(int fd){
         perror("Erreur read_string lecture de la taille de la string");
         return 1;
     }
-    len = reverse_byte32(len);
+    len = be32toh(len);
 
     char str[len + 1];
     if(read(fd, str, len) < len) {
@@ -82,7 +82,7 @@ int read_commandline(int fd) {
         perror("Erreur read_commandline lecture du nombre d'argument");
         return 1;
     }
-    argc = reverse_byte32(argc);
+    argc = be32toh(argc);
     
     for(unsigned int i = 0; i < argc; i++) {
         if(read_string(fd)) {
@@ -115,7 +115,7 @@ int read_reptype (int fd){
         perror("read reptype");
         return -1;
     }
-    rep = reverse_byte16 (rep);
+    rep = be16toh (rep);
     if (rep == SERVER_REPLY_OK) return 0;
     else return 1;
 }
@@ -171,7 +171,7 @@ int read_list(int fd){
         perror("Erreur read_list lecture du nombre de taches");
         return 1;
     }
-    nbtasks = reverse_byte32(nbtasks);
+    nbtasks = be32toh(nbtasks);
 
     for(unsigned int i = 0; i < nbtasks; i++){
         if(read_taskid(fd)){
@@ -201,21 +201,21 @@ int read_times_exitcode(int fd){
     if (read(fd,&nbRun,sizeof(uint32_t)) != sizeof(uint32_t)){
         return 1;
     }
-    nbRun = reverse_byte32(nbRun);
+    nbRun = be32toh(nbRun);
     for (uint32_t i = 0; i<nbRun;i++){
         int64_t time;
         if (read(fd,&time,sizeof(int64_t)) != sizeof(int64_t)){
             perror ("echec read du time");
             return 1;
         }
-        time = (int64_t) reverse_byte64(time);
+        time = (int64_t) be64toh(time);
         print_time(time);
         uint16_t exitCode;
         if (read(fd,&exitCode,sizeof(uint16_t)) != sizeof(uint16_t)){
             perror ("echec read du exit code");
             return 1;
         }
-        exitCode = reverse_byte16(exitCode);
+        exitCode = be16toh(exitCode);
         printf(" %u\n",(unsigned int) exitCode);
     }
     return 0;
