@@ -192,3 +192,30 @@ int read_list(int fd){
     }
     return 0;
 }
+
+int read_times_exitcode(int fd){
+    if (read_reptype(fd) != 0){
+        return 1;
+    }
+    uint32_t nbRun;
+    if (read(fd,&uint32_t,sizeof(uint32_t)) != sizeof(uint32_t)){
+        return 1;
+    }
+    nbRun = reverse_byte32(nbRun);
+    for (uint32_t i = 0; i<nbRun;i++){
+        int64_t time;
+        if (read(fd,&time,sizeof(int64_t)) != sizeof(int64_t)){
+            perror ("echec read du time");
+            return 1;
+        }
+        print_time(time);
+        uint16_t exitCode;
+        if (read(fd,&exitCode,sizeof(uint16_t)) != sizeof(uint16_t)){
+            perror ("echec read du exit code");
+            return 1;
+        }
+        exitCode = reverse_byte16(exitCode);
+        printf(" %u\n",(unsigned int) exitCode);
+    }
+    return 0;
+}

@@ -25,5 +25,7 @@ int read_stdout_stderr(int fd);
 int read_list(int fd);
 
 int print_time (int64_t time);
+int read_times_exitcode(int fd);
+
 
 #endif // READ_REQUEST_H
