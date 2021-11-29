@@ -17,6 +17,7 @@
 #include "commandline.h"
 #include "write-request.h"
 #include "convert-uint.h"
+#include "read-request.h"
 
 #include "client-request.h"
 #include "server-reply.h"
