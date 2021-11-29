@@ -195,10 +195,10 @@ int read_list(int fd){
 
 int read_times_exitcode(int fd){
     if (read_reptype(fd) != 0){
-        return 1;
+        return 1;   
     }
     uint32_t nbRun;
-    if (read(fd,&uint32_t,sizeof(uint32_t)) != sizeof(uint32_t)){
+    if (read(fd,&nbRun,sizeof(uint32_t)) != sizeof(uint32_t)){
         return 1;
     }
     nbRun = reverse_byte32(nbRun);
@@ -208,6 +208,7 @@ int read_times_exitcode(int fd){
             perror ("echec read du time");
             return 1;
         }
+        time = (int64_t) reverse_byte64(time);
         print_time(time);
         uint16_t exitCode;
         if (read(fd,&exitCode,sizeof(uint16_t)) != sizeof(uint16_t)){

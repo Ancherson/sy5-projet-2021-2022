@@ -226,7 +226,7 @@ int main(int argc, char * argv[]) {
       exit_code = read_remove(fd_reply);
       break;
     case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES:
-      //TODO
+      exit_code = read_times_exitcode(fd_reply);
       break;
     case CLIENT_REQUEST_TERMINATE:
       exit_code = read_terminate(fd_reply);
