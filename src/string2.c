@@ -6,10 +6,9 @@ int create_string(string *dest, int len, char *str) {
     return 0;
 }
 
-int write_string(int fd, string str){
-    uint32_t len = reverse_byte32(str.len);
-    if (write(fd, &len, sizeof(uint32_t)) < sizeof(uint32_t))  return 1;
-
-    if (write(fd, str.str, str.len) != str.len) return 1;
-    return 0;
+int write_string(char * buf, string str){
+    *((uint32_t *) buf) = htobe32(str.len);
+    buf += sizeof(uint32_t);
+    memcpy(buf, str.str, str.len);
+    return sizeof(uint32_t)+str.len;
 }

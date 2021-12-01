@@ -165,12 +165,11 @@ int main(int argc, char * argv[]) {
 
   free(pipe_request_file);
 
+  char buf[4096];
+
   //Dans tous les cas on écrit le opcode
-  if(write_opcode(fd_request, operation) == 1) {
-    printf("PBM ECRITURE OPCODE !\n");
-    free(pipe_reply_file);
-    exit(EXIT_FAILURE);
-  } 
+  int n = write_opcode(buf, operation);
+
   //Ensuit suivant les cas ...
   switch(operation) {
     case CLIENT_REQUEST_REMOVE_TASK :
@@ -178,20 +177,18 @@ int main(int argc, char * argv[]) {
     case CLIENT_REQUEST_GET_STDOUT :
     case CLIENT_REQUEST_GET_STDERR :
       //On écrit en plus le taskid
-      if(write_taskid(fd_request, taskid) == 1) {
-        printf("PBM ECRITURE TASKID !\n");
-        free(pipe_reply_file);
-        exit(EXIT_FAILURE);
-      } 
+      n += write_taskid(buf+n, taskid);
       break;
     case CLIENT_REQUEST_CREATE_TASK :
       //On écrit tous ce qu'il faut la requête create
-      if(write_create(fd_request, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
-        printf("PBM ECRITURE CREATE !\n");
-        free(pipe_reply_file);
-        exit(EXIT_FAILURE);
-      }
+      n += write_create(buf+n, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind);
       break;
+  }
+
+  if(write(fd_request, buf, n) == 1) {
+    printf("PBM ECRITURE REQUETE!\n");
+    free(pipe_reply_file);
+    exit(EXIT_FAILURE);
   }
 
   //Fermeture du FIFO request

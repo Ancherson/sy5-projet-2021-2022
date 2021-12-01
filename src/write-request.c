@@ -1,13 +1,13 @@
 #include "write-request.h"
 
 
-int write_opcode(int fd, uint16_t opcode){
+int write_opcode(char * buf, uint16_t opcode){
     opcode = htobe16(opcode);
-    if (write(fd, &opcode, sizeof(uint16_t)) < sizeof(uint16_t)) return 1;
-    return 0;
+    *((uint16_t*)buf) = opcode;
+    return sizeof(uint16_t);
 }
 
-int write_timing(int fd, char * minutes_str, char * hours_str, char * daysofweek_str){
+int write_timing(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str){
     timing t;
     if(timing_from_strings(&t, minutes_str, hours_str, daysofweek_str) == -1) {
         printf("Erreur timing_from_strings\n");
@@ -15,18 +15,22 @@ int write_timing(int fd, char * minutes_str, char * hours_str, char * daysofweek
     }
     t.minutes = htobe64(t.minutes);
     t.hours = htobe32(t.hours);
-    if (write(fd, &t, TIMING_SIZE) < TIMING_SIZE) return 1;
-    return 0;
+    *((uint64_t*)buf) = t.minutes;
+    buf += sizeof(uint64_t);
+    *((uint32_t*)buf) = t.hours;
+    buf += sizeof(uint32_t);
+    *((uint8_t*)buf) = t.daysofweek;
+    return TIMING_SIZE;
 }
     
-int write_taskid(int fd, uint64_t taskid){
+int write_taskid(char * buf, uint64_t taskid){
     taskid = htobe64(taskid);
-    if (write(fd, &taskid, sizeof(uint64_t)) < sizeof (uint64_t)) return 1;
-    return 0;
+    *((uint64_t*)buf) = taskid;
+    return sizeof(uint64_t);
 }
 
-int write_create(int fd, char * minutes_str, char * hours_str, char * daysofweek_str, int argc, char **argv){
-    if (write_timing(fd,minutes_str,hours_str,daysofweek_str) == 1) return 1;
+int write_create(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str, int argc, char **argv){
+    int n = write_timing(buf,minutes_str,hours_str,daysofweek_str);
     commandline *cmd = malloc(sizeof(commandline));
     if(cmd == NULL) {
         perror("malloc commandline create");
@@ -41,8 +45,8 @@ int write_create(int fd, char * minutes_str, char * hours_str, char * daysofweek
         create_string(tab + i, strlen(argv[i]), argv[i]);
     }
     if (create_commandline(cmd, argc, tab) != 0) return 1;
-    if (write_commandline(fd,*cmd) == 1) return 1;
+    n += write_commandline(buf+n, *cmd);
     free(cmd);
     free(tab);
-    return 0;
+    return n;
 }
