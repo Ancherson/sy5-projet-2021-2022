@@ -31,22 +31,13 @@ int write_taskid(char * buf, uint64_t taskid){
 
 int write_create(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str, int argc, char **argv){
     int n = write_timing(buf,minutes_str,hours_str,daysofweek_str);
-    commandline *cmd = malloc(sizeof(commandline));
-    if(cmd == NULL) {
-        perror("malloc commandline create");
-        return 1;
-    }
-    string *tab = malloc(sizeof(string) * (argc));
-    if(tab == NULL) {
-        perror("malloc tableau string");
-        return 1;
-    }
+    commandline cmd; 
+    string tab[argc];
+
     for(int i = 0; i < argc; i++) {
         create_string(tab + i, strlen(argv[i]), argv[i]);
     }
-    if (create_commandline(cmd, argc, tab) != 0) return 1;
-    n += write_commandline(buf+n, *cmd);
-    free(cmd);
-    free(tab);
+    if (create_commandline(&cmd, argc, tab) != 0) return 1;
+    n += write_commandline(buf+n, cmd);
     return n;
 }

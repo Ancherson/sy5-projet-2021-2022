@@ -185,7 +185,7 @@ int main(int argc, char * argv[]) {
       break;
   }
 
-  if(write(fd_request, buf, n) == 1) {
+  if(write(fd_request, buf, n) < n) {
     printf("PBM ECRITURE REQUETE!\n");
     free(pipe_reply_file);
     exit(EXIT_FAILURE);
