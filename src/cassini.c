@@ -19,6 +19,60 @@ const char usage_info[] = "\
      -p PIPES_DIR -> look for the pipes in PIPES_DIR (default: /tmp/<USERNAME>/saturnd/pipes)\n\
 ";
 
+int get_pipes_file(char *pipes_directory, char **pipe_request, char **pipe_reply) {
+  //Si le pipes_directory n'est pas précisé, on choisi /tmp/USER/saturnd/pipes
+  if(pipes_directory == NULL) {
+    char *user = getenv("USER");
+    char *dir_pre  = "/tmp/";
+    char *dir_next = "/saturnd/pipes";
+    pipes_directory = malloc(strlen(dir_pre) + strlen(user) + strlen(dir_next) + 1);
+    if(pipes_directory == NULL) {
+      perror("PBM malloc pipes_directory");
+      return 1;
+    }
+    strcpy(pipes_directory, dir_pre);
+    strcat(pipes_directory, user);
+    strcat(pipes_directory, dir_next);
+    pipes_directory[strlen(dir_pre) + strlen(user) + strlen(dir_next)] = '\0';
+  }
+
+  //Creation des chaines de caractères pour l'ouverture des FIFO
+  char *str_pipe_request = "saturnd-request-pipe";
+  char *str_pipe_reply = "saturnd-reply-pipe";
+
+  char *pipe_request_file = malloc(strlen(pipes_directory) + strlen(str_pipe_request) + 2);
+  if(pipe_request_file == NULL) {
+    perror("PBM malloc pipe_request_file");
+    free(pipes_directory);
+    return 1;
+  }
+
+  char *pipe_reply_file = malloc(strlen(pipes_directory) + strlen(str_pipe_reply) + 2);
+  if(pipe_request_file == NULL) {
+    perror("PBM malloc pipe_reply_file");
+    free(pipes_directory);
+    free(pipe_request_file);
+    return 1;
+  }
+
+  strcpy(pipe_request_file,pipes_directory);
+  strcat(pipe_request_file, "/");
+  strcat(pipe_request_file,str_pipe_request);
+  pipe_request_file[strlen(pipes_directory) + strlen(str_pipe_request) + 1] = '\0';
+
+  strcpy(pipe_reply_file,pipes_directory);
+  strcat(pipe_reply_file, "/");
+  strcat(pipe_reply_file,str_pipe_reply);
+  pipe_reply_file[strlen(pipes_directory) + strlen(str_pipe_reply) + 1] = '\0';
+
+  free(pipes_directory);
+
+  *pipe_request = pipe_request_file;
+  *pipe_reply = pipe_reply_file;
+
+  return 0;
+}
+
 int main(int argc, char * argv[]) {
   errno = 0;
   
@@ -89,18 +143,33 @@ int main(int argc, char * argv[]) {
   // | TODO |
   // --------
 
-  //Ouverture du fichier test -> mais plus tard ouvrir le FIFO
-  int fd = open("test", O_WRONLY | O_CREAT | O_TRUNC, 0750);
-  if(fd == -1) {
-    printf("PBM OUVERTURE TEST !\n");
+  //Creation des chaines de caractères pour l'ouverture des FIFO
+  char *pipe_request_file = NULL;
+  char *pipe_reply_file = NULL;
+  if(get_pipes_file(pipes_directory, &pipe_request_file, &pipe_reply_file)) {
+    printf("Erreur construction chaine de caractere des fichiers pipes\n");
+    exit(EXIT_FAILURE);
+  }
+  
+  //Ouverture du FIFO request
+  int fd_request = open(pipe_request_file, O_WRONLY, 0750);
+  if(fd_request == -1) {
+    perror("PBM OUVERTURE PIPE !\n");
+    if(errno == ENOENT) {
+      printf("Fichier : %s n'existe pas \n", pipe_request_file);
+    }
+    free(pipe_request_file);
+    free(pipe_reply_file);
     exit(EXIT_FAILURE);
   }
 
+  free(pipe_request_file);
+
+  char buf[BUFFER_SIZE];
+
   //Dans tous les cas on écrit le opcode
-  if(write_opcode(fd, operation) == 1) {
-    printf("PBM ECRITURE OPCODE !\n");
-    exit(EXIT_FAILURE);
-  } 
+  int n = write_opcode(buf, operation);
+
   //Ensuit suivant les cas ...
   switch(operation) {
     case CLIENT_REQUEST_REMOVE_TASK :
@@ -108,25 +177,65 @@ int main(int argc, char * argv[]) {
     case CLIENT_REQUEST_GET_STDOUT :
     case CLIENT_REQUEST_GET_STDERR :
       //On écrit en plus le taskid
-      if(write_taskid(fd, taskid) == 1) {
-        printf("PBM ECRITURE TASKID !\n");
-        exit(EXIT_FAILURE);
-      } 
+      n += write_taskid(buf+n, taskid);
       break;
     case CLIENT_REQUEST_CREATE_TASK :
       //On écrit tous ce qu'il faut la requête create
-      if(write_create(fd, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind)) {
-        printf("PBM ECRITURE CREATE !\n");
-        exit(EXIT_FAILURE);
-      }
+      n += write_create(buf+n, minutes_str, hours_str, daysofweek_str, argc - optind, argv + optind);
       break;
   }
 
-  if(close(fd) == -1) {
-    perror("PBM CLOSE");
+  if(write(fd_request, buf, n) < n) {
+    printf("PBM ECRITURE REQUETE!\n");
+    free(pipe_reply_file);
     exit(EXIT_FAILURE);
   }
-  return EXIT_SUCCESS;
+
+  //Fermeture du FIFO request
+  if(close(fd_request) == -1) {
+    perror("PBM CLOSE");
+    free(pipe_reply_file);
+    exit(EXIT_FAILURE);
+  }
+
+  //Ouverture du FIFO reply
+  int fd_reply = open(pipe_reply_file, O_RDONLY);
+  if(fd_reply == -1) {
+    perror("PBM OPEN REPLY");
+    if(errno == ENOENT) {
+      printf("Fichier : %s n'existe pas \n", pipe_reply_file);
+    }
+    free(pipe_reply_file);
+    exit(EXIT_FAILURE);
+  }
+  free(pipe_reply_file);
+
+  //Toute la partie où on read le reste
+  int exit_code = EXIT_SUCCESS;
+  switch(operation){
+    case CLIENT_REQUEST_LIST_TASKS:
+      exit_code = read_list(fd_reply);
+      break;
+    case CLIENT_REQUEST_CREATE_TASK:
+      exit_code = read_create(fd_reply);
+      break;
+    case CLIENT_REQUEST_REMOVE_TASK:
+      exit_code = read_remove(fd_reply);
+      break;
+    case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES:
+      exit_code = read_times_exitcode(fd_reply);
+      break;
+    case CLIENT_REQUEST_TERMINATE:
+      exit_code = read_terminate(fd_reply);
+      break;     
+    case CLIENT_REQUEST_GET_STDOUT:
+    case CLIENT_REQUEST_GET_STDERR:
+      exit_code = read_stdout_stderr(fd_reply);
+      break;
+  }
+
+
+  return exit_code;
 
  error:
   if (errno != 0) perror("main");

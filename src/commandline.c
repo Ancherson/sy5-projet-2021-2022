@@ -6,11 +6,11 @@ int create_commandline(struct commandline *dest, uint32_t argc, string *argv){
     return 0;
 }
 
-int write_commandline(int fd, commandline cmd) {
-    uint32_t argc = reverse_byte32(cmd.argc);
-    if(write(fd, &argc, sizeof(uint32_t)) < sizeof(uint32_t)) return 1;
+int write_commandline(char * buf, commandline cmd) {
+    *((uint32_t *) buf) = htobe32(cmd.argc);
+    int n = sizeof(uint32_t);
     for(unsigned int i = 0; i < cmd.argc; i++) {
-        if(write_string(fd, cmd.argv[i])) return 1;
+        n += write_string(buf+n, cmd.argv[i]);
     }
-    return 0;
+    return n;
 }
