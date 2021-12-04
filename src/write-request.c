@@ -11,7 +11,7 @@ int write_timing(char * buf, char * minutes_str, char * hours_str, char * daysof
     timing t;
     if(timing_from_strings(&t, minutes_str, hours_str, daysofweek_str) == -1) {
         printf("Erreur timing_from_strings\n");
-        return 1;
+        exit(EXIT_FAILURE);
     }
     t.minutes = htobe64(t.minutes);
     t.hours = htobe32(t.hours);
