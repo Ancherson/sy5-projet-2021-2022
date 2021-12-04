@@ -9,7 +9,6 @@
 
 #include "timing.h"
 #include "timing-text-io.h"
-#include "convert-uint.h"
 #include "string2.h"
 #include "commandline.h"
 #include "server-reply.h"

@@ -2,8 +2,8 @@
 #define COMMANDLINE
 
 #include <stdint.h>
+#include <endian.h>
 #include "string2.h"
-#include "convert-uint.h"
 
 typedef struct string string;
 typedef struct commandline {
@@ -12,6 +12,6 @@ typedef struct commandline {
 } commandline;
 
 int create_commandline(commandline *dest, uint32_t argc, string *argv);
-int write_commandline(int fd, commandline str);
+int write_commandline(char *buf, commandline str);
 
 #endif // COMMANDLINE
