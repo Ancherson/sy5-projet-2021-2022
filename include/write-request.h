@@ -6,7 +6,6 @@
 #include <string.h>
 #include<endian.h>
 
-#include "convert-uint.h"
 #include "timing-text-io.h"
 #include "commandline.h"
 
