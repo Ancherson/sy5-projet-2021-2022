@@ -165,7 +165,7 @@ int main(int argc, char * argv[]) {
 
   free(pipe_request_file);
 
-  char buf[4096];
+  char buf[BUFFER_SIZE];
 
   //Dans tous les cas on écrit le opcode
   int n = write_opcode(buf, operation);

@@ -1,5 +1,7 @@
 #ifndef WRITEREQUEST_H
 #define WRITEREQUEST_H
+#define BUFFER_SIZE 32768
+
 
 #include <unistd.h>
 #include <stdint.h>
