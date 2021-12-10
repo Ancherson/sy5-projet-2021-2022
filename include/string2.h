@@ -15,5 +15,7 @@ typedef struct string {
 
 int create_string(string *dest, int len, char *str);
 int write_string(char *buf, string str);
+void alloc_string(string *dest, int len, char *str);
+void free_string(string *s);
 
 #endif // STRING2_H

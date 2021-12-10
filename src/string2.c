@@ -12,3 +12,18 @@ int write_string(char * buf, string str){
     memcpy(buf, str.str, str.len);
     return sizeof(uint32_t)+str.len;
 }
+
+void alloc_string(string *dest, int len, char *str) {
+    dest->str = malloc(len + 1);
+    if(dest->str == NULL) {
+        perror("malloc alloc string");
+        exit(1);
+    }
+    strcpy(dest->str, str);
+    dest->str[len] = '\0';
+    dest->len = len;
+}
+
+void free_string(string *s) {
+    free(s->str);
+}

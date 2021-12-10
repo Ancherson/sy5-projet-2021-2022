@@ -14,3 +14,22 @@ int write_commandline(char * buf, commandline cmd) {
     }
     return n;
 }
+
+void alloc_commandline(commandline *dest, uint32_t argc, char **argv) {
+    dest->argc = argc;
+    dest->argv = malloc(argc * (sizeof(string)));
+    if(dest->argv == NULL) {
+        perror("error malloc alloc_commandline");
+        exit(1);
+    }
+    for(int i = 0; i < argc; i++) {
+        alloc_string(dest->argv + i, strlen(argv[i]), argv[i]);
+    }
+}
+
+void free_commandline(commandline *c) {
+    for(int i = 0; i < c->argc; i++) {
+        free_string(c->argv + i);
+    }
+    free(c->argv);
+}
