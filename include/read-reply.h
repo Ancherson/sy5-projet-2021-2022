@@ -1,5 +1,5 @@
-#ifndef READ_REQUEST_H
-#define READ_REQUEST_H
+#ifndef READ_REPLY_H
+#define READ_REPLY_H
 
 #include <stdio.h>
 #include <unistd.h>
@@ -28,4 +28,4 @@ int print_time (int64_t time);
 int read_times_exitcode(int fd);
 
 
-#endif // READ_REQUEST_H
+#endif // READ_REPLY_H
