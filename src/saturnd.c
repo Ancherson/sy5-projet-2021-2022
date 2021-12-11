@@ -26,7 +26,7 @@ task *test3(task *t, int *len) {
 
 
 void print_task(task *t) {
-    printf("taskid = %d\n", t->taskid);
+    printf("taskid = %lu\n", t->taskid);
     printf("commandline : ");
     for(int i = 0; i < t->cmd.argc; i++) {
         printf("%s ", t->cmd.argv[i].str);
@@ -50,8 +50,9 @@ int main(){
     t = test3(t, &len);
     t = test(t, &len);
     print_task_array(t, len);
-    free_task_array(t, len);
+    create(*t);
 
+    free_task_array(t, len);
 
     return 0;
 }

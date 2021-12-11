@@ -1,6 +1,6 @@
 #include "task.h"
 
-void create_task(task *t, uint32_t taskid, commandline c, timing time) {
+void create_task(task *t, uint64_t taskid, commandline c, timing time) {
 
     t->cmd = c;
     t->taskid = taskid;
@@ -34,7 +34,7 @@ void free_task_array(task *t, int len) {
     free(t);
 }
 
-task *add_task(task *t, int *len, uint32_t taskid, commandline c, timing time) {
+task *add_task(task *t, int *len, uint64_t taskid, commandline c, timing time) {
     for(int i = 0; i < *len; i++) {
         if(!t[i].alive) {
             create_task(t + i, taskid, c, time);
@@ -52,10 +52,11 @@ task *add_task(task *t, int *len, uint32_t taskid, commandline c, timing time) {
             return t;
         } 
     }   
+    return t;
 }
 
 // 0 si ça marche,  1 pas trouvé
-int remove_task(task *t, int len, uint32_t taskid) {
+int remove_task(task *t, int len, uint64_t taskid) {
     for(int i = 0; i < len; i++) {
         if(t[i].alive && t[i].taskid == taskid) {
             free_task(t + i);

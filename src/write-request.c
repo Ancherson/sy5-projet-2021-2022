@@ -7,12 +7,16 @@ int write_opcode(char * buf, uint16_t opcode){
     return sizeof(uint16_t);
 }
 
-int write_timing(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str){
+int write_timing_from_strings(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str){
     timing t;
     if(timing_from_strings(&t, minutes_str, hours_str, daysofweek_str) == -1) {
         printf("Erreur timing_from_strings\n");
         exit(EXIT_FAILURE);
     }
+    return write_timing(buf, t);
+}
+
+int write_timing(char * buf, timing t) {
     t.minutes = htobe64(t.minutes);
     t.hours = htobe32(t.hours);
     *((uint64_t*)buf) = t.minutes;
@@ -21,8 +25,8 @@ int write_timing(char * buf, char * minutes_str, char * hours_str, char * daysof
     buf += sizeof(uint32_t);
     *((uint8_t*)buf) = t.daysofweek;
     return TIMING_SIZE;
-}
-    
+}   
+
 int write_taskid(char * buf, uint64_t taskid){
     taskid = htobe64(taskid);
     *((uint64_t*)buf) = taskid;
@@ -30,7 +34,7 @@ int write_taskid(char * buf, uint64_t taskid){
 }
 
 int write_create(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str, int argc, char **argv){
-    int n = write_timing(buf,minutes_str,hours_str,daysofweek_str);
+    int n = write_timing_from_strings(buf,minutes_str,hours_str,daysofweek_str);
     commandline cmd; 
     string tab[argc];
 
