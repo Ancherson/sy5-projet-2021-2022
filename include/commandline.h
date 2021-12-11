@@ -13,6 +13,7 @@ typedef struct commandline {
 
 int create_commandline(commandline *dest, uint32_t argc, string *argv);
 int write_commandline(char *buf, commandline str);
+void alloc_commandline_incomplete(commandline *dest, uint32_t argc);
 void alloc_commandline(commandline *dest, uint32_t argc, char **argv);
 void free_commandline(commandline *c);
 

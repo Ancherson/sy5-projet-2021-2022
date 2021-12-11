@@ -15,15 +15,17 @@
 
 int read_remove(int fd);
 int read_create(int fd);
-int read_taskid(int fd);
-int read_timing(int fd);
-int read_string(int fd);
-int read_commandline(int fd);
+uint64_t read_taskid(int fd);
+timing read_timing(int fd);
+char *read_string(int fd, uint32_t *l);
+commandline read_commandline(int fd);
 int read_reptype (int fd);
 int read_terminate(int fd);
 int read_stdout_stderr(int fd);
 int read_list(int fd);
 
+void print_commandline(commandline cmd);
+void print_timing(timing t);
 int print_time (int64_t time);
 int read_times_exitcode(int fd);
 

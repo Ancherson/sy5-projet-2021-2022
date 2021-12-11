@@ -15,13 +15,17 @@ int write_commandline(char * buf, commandline cmd) {
     return n;
 }
 
-void alloc_commandline(commandline *dest, uint32_t argc, char **argv) {
+void alloc_commandline_incomplete(commandline *dest, uint32_t argc) {
     dest->argc = argc;
     dest->argv = malloc(argc * (sizeof(string)));
     if(dest->argv == NULL) {
         perror("error malloc alloc_commandline");
         exit(1);
     }
+}
+
+void alloc_commandline(commandline *dest, uint32_t argc, char **argv) {
+    alloc_commandline_incomplete(dest, argc);
     for(int i = 0; i < argc; i++) {
         alloc_string(dest->argv + i, strlen(argv[i]), argv[i]);
     }

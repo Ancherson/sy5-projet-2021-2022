@@ -24,75 +24,87 @@ int read_create(int fd) {
         if(rep == 1) printf("Erreur Requête Create\n");
         return EXIT_FAILURE;
     }
-    rep = read_taskid(fd);
-    if(rep == 0) printf("\n");
-    return rep;
+    uint64_t taskid = read_taskid(fd);
+    printf("%lu\n", taskid);
+    return EXIT_SUCCESS;
 }
 
-int read_taskid(int fd){
+uint64_t read_taskid(int fd){
     uint64_t taskid;
     if(read(fd, &taskid, sizeof(uint64_t)) < sizeof(uint64_t)){
         perror("Erreur read_taskid");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     taskid = be64toh(taskid);
-    printf("%lu", taskid);
-    return EXIT_SUCCESS;
+    return taskid;
 }
 
-int read_timing(int fd){
+timing read_timing(int fd){
     timing t;
     if(read(fd, &t, TIMING_SIZE) < TIMING_SIZE){
         perror("Erreur read_timing");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     t.minutes = be64toh(t.minutes);
     t.hours = be32toh(t.hours);
+    return t;
+}
+
+void print_timing(timing t) {
     char s[TIMING_TEXT_MIN_BUFFERSIZE];
     if(timing_string_from_timing(s, &t) == 1) {
         printf("Erreur read_timing timing_string_from_timing\n");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     printf("%s", s);
-    return EXIT_SUCCESS;
 }
 
-int read_string(int fd){
+char *read_string(int fd, uint32_t *l){
     uint32_t len;
     if(read(fd, &len, sizeof(uint32_t)) < sizeof(uint32_t)){
         perror("Erreur read_string lecture de la taille de la string");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     len = be32toh(len);
 
-    char str[len + 1];
+
+    char *str = malloc(len + 1);
+    if(str == NULL) {
+        perror("malloc read string");
+        exit(EXIT_FAILURE);
+    }
     if(read(fd, str, len) < len) {
         perror("read_string string");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     str[len] = '\0';
-
-    printf("%s", str);
-    return EXIT_SUCCESS;
+    *l = len;
+    return str;
+    //printf("%s", str);
+    //return EXIT_SUCCESS;
 }
 
-int read_commandline(int fd) {
+
+
+commandline read_commandline(int fd) {
     uint32_t argc;
     if(read(fd, &argc, sizeof(uint32_t)) < sizeof(uint32_t)){
         perror("Erreur read_commandline lecture du nombre d'argument");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     argc = be32toh(argc);
-    
+    commandline cmd;
+    alloc_commandline_incomplete(&cmd, argc);
     for(unsigned int i = 0; i < argc; i++) {
-        if(read_string(fd)) {
-            printf("Erreur read_commandline read_string\n");
-            return EXIT_FAILURE;
-        }
-        printf(" ");
+        cmd.argv[i].str = read_string(fd, &cmd.argv[i].len);
     }
+    return cmd;
+}
 
-    return EXIT_SUCCESS;
+void print_commandline(commandline cmd) {
+    for(uint32_t i = 0; i < cmd.argc; i++) {
+        printf("%s ", cmd.argv[i].str);
+    }
 }
 
 int print_time (int64_t time){
@@ -136,10 +148,10 @@ int read_stdout_stderr(int fd){
         return EXIT_FAILURE;
     }
     if(rep == 0){
-        if(read_string(fd)) {
-            printf("Erreur read_stdout_stderr read_string\n");
-            return EXIT_FAILURE;
-        }
+        uint32_t len;
+        char *str = read_string(fd, &len);
+        printf("%s", str);
+        free(str);
         return EXIT_SUCCESS;
     }
     if(rep == 1){
@@ -174,20 +186,15 @@ int read_list(int fd){
     nbtasks = be32toh(nbtasks);
 
     for(unsigned int i = 0; i < nbtasks; i++){
-        if(read_taskid(fd)){
-            printf("Erreur read_list read_taskid\n");
-            return EXIT_FAILURE;
-        }
+        uint64_t taskid = read_taskid(fd);
+        printf("%lu", taskid);
         printf(": ");
-        if(read_timing(fd)){
-            printf("Erreur read_list read_timing\n");
-            return EXIT_FAILURE;
-        }
+        timing t = read_timing(fd);
+        print_timing(t);
         printf(" ");
-        if(read_commandline(fd)){
-            printf("Erreur read_list read_commandline\n");
-            return EXIT_FAILURE;
-        }
+        commandline cmd = read_commandline(fd);
+        print_commandline(cmd);
+        free_commandline(&cmd);
         printf("\n");
     }
     return EXIT_SUCCESS;
