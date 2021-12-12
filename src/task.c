@@ -41,17 +41,16 @@ task *add_task(task *t, int *len, uint64_t taskid, commandline c, timing time) {
             return t;
         } 
     }
+    int oldlen = *len;
     *len *= 2;
     t = realloc(t, sizeof(task) * (*len));
     if(t == NULL) {
         perror("realloc add task");
     }
-    for(int i = 0; i < *len; i++) {
-        if(!t[i].alive) {
-            create_task(t + i, taskid, c, time);
-            return t;
-        } 
-    }   
+    for(int i = oldlen; i < *len; i++) {
+        t[i].alive = 0;
+    }
+    create_task(t + oldlen, taskid, c, time);   
     return t;
 }
 

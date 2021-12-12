@@ -36,7 +36,7 @@ void print_task(task *t) {
 
 void print_task_array(task *t, int len) {
     for(int i = 0; i < len; i++) {
-        print_task(t + i);
+        if(t[i].alive) print_task(t + i);
     }
 }
 
