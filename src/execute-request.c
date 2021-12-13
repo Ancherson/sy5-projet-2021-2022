@@ -22,7 +22,6 @@ void create(task t) {
         exit(1);
     }
     char buf_write[BUFFER_SIZE];
-    printf("coucou\n");
 
     int n = write_commandline(buf_write, t.cmd);
 
@@ -32,4 +31,25 @@ void create(task t) {
         dprintf(2, "Error write %s\n", buf);
         exit(1);
     }
+}
+
+int list(char *buf, task *t, int len){
+    int n = 0;
+    uint32_t nbtasks = 0;
+    for(int i = 0; i < len; i++){
+        if(t[i].alive) nbtasks++;
+    }
+
+    nbtasks = htobe32(nbtasks);
+    *((uint32_t*)buf) = nbtasks;
+    n += sizeof(uint32_t);
+
+    for(int i = 0; i < len; i++){
+        if(t[i].alive){
+            n += write_taskid(buf+n, t[i].taskid);
+            n += write_timing(buf+n, t[i].time);
+            n += write_commandline(buf+n, t[i].cmd);
+        }
+    }
+    return n;
 }

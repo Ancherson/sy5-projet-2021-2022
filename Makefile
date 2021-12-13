@@ -1,7 +1,7 @@
 all: saturnd cassini
 
-saturnd: saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o
-	gcc saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o -o saturnd
+saturnd: saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o read-reply.o
+	gcc saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o read-reply.o -o saturnd
 
 cassini: cassini.o commandline.o string2.o timing-text-io.o write-request.o read-reply.o
 	gcc cassini.o commandline.o string2.o timing-text-io.o write-request.o read-reply.o -o cassini
