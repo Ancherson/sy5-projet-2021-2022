@@ -50,7 +50,19 @@ int main(){
     t = test3(t, &len);
     t = test(t, &len);
     print_task_array(t, len);
-    create(*t);
+    //create(*t);
+
+    int fd0 = open("run/pipes/saturnd-request-pipe", O_RDONLY);
+    char read_buf[sizeof(uint16_t)];
+    read(fd0, read_buf, sizeof(uint16_t));
+    
+    int fd = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
+
+    int n = 0;
+    char buf[4096];
+    n += write_opcode(buf, SERVER_REPLY_OK);
+    n += list(buf+n, t, len);
+    write(fd, buf, n);
 
     free_task_array(t, len);
 
