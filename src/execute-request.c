@@ -1,7 +1,7 @@
 #include "execute-request.h"
 
 
-void create(task t) {
+void do_create(task t) {
     if(mkdir("task", 0750) == -1 && errno != EEXIST) {
         perror("mkdir task");
         exit(1);
@@ -31,6 +31,29 @@ void create(task t) {
         dprintf(2, "Error write %s\n", buf);
         exit(1);
     }
+}
+
+
+
+uint64_t gen_taskid(task *t, int len) {
+    uint64_t taskid = 0;
+    while(!task_exist(t,len,taskid)) {
+        taskid++;
+    }
+    return taskid;
+}
+
+int create(int fd, char *buf, task **pt, int *len, int *nb_task) {
+    timing time = read_timing(fd);
+    commandline c = read_commandline(fd);
+    uint64_t taskid = gen_taskid(*pt, *len);
+
+    *pt = add_task(*pt, len, nb_task,taskid, c, time);
+    do_create((*pt)[*nb_task - 1]);
+
+    int n = write_opcode(buf, SERVER_REPLY_OK);
+    n += write_taskid(buf + n, taskid);
+    return n;
 }
 
 int list(char *buf, task *t, uint32_t nb_tasks){

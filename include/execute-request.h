@@ -3,10 +3,12 @@
 #include "task.h"
 #include <sys/stat.h>
 #include "write-request.h"
+#include "read-reply.h"
 #include <fcntl.h>
 #include <errno.h>
 
-void create(task t);
 int list(char *buf, task *t, uint32_t nbtasks);
+void do_create(task t);
+int create(int fd, char *buf, task **pt, int *len, int *nb_task);
 
 #endif // EXECUTE_REQUEST_H

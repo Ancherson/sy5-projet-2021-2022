@@ -58,3 +58,10 @@ int remove_task(task *t, int *nb_tasks, uint64_t taskid) {
     }
     return 1;
 }
+
+int task_exist(task *t, int nb_tasks, uint64_t taskid) {
+    for(int i = 0; i < nb_tasks; i++) {
+        if(t[i].taskid == taskid) return 1;
+    } 
+    return 0;
+}
