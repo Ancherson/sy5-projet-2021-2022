@@ -35,9 +35,9 @@ void do_create(task t) {
 
 
 
-uint64_t gen_taskid(task *t, int len) {
+uint64_t gen_taskid(task *t, int nb_tasks) {
     uint64_t taskid = 0;
-    while(!task_exist(t,len,taskid)) {
+    while(!task_exist(t,nb_tasks,taskid)) {
         taskid++;
     }
     return taskid;
@@ -46,7 +46,7 @@ uint64_t gen_taskid(task *t, int len) {
 int create(int fd, char *buf, task **pt, int *len, int *nb_task) {
     timing time = read_timing(fd);
     commandline c = read_commandline(fd);
-    uint64_t taskid = gen_taskid(*pt, *len);
+    uint64_t taskid = gen_taskid(*pt, *nb_task);
 
     *pt = add_task(*pt, len, nb_task,taskid, c, time);
     do_create((*pt)[*nb_task - 1]);
