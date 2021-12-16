@@ -18,5 +18,6 @@ task *create_task_array(int len);
 void free_task_array(task *t, int len);
 task *add_task(task *t, int *len, uint64_t taskid, commandline c, timing time);
 int remove_task(task *t, int len,uint64_t taskid);
+int task_exist(task *t, int len, uint64_t taskid);
 
 #endif // TASK_H

@@ -64,3 +64,10 @@ int remove_task(task *t, int len, uint64_t taskid) {
     }
     return 1;
 }
+
+int task_exist(task *t, int len, uint64_t taskid) {
+    for(int i = 0; i < len; i++) {
+        if(t[i].alive && t[i].taskid == taskid) return 1;
+    } 
+    return 0;
+}
