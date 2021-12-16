@@ -33,23 +33,16 @@ void create(task t) {
     }
 }
 
-int list(char *buf, task *t, int len){
+int list(char *buf, task *t, uint32_t nb_tasks){
     int n = 0;
-    uint32_t nbtasks = 0;
-    for(int i = 0; i < len; i++){
-        if(t[i].alive) nbtasks++;
-    }
-
-    nbtasks = htobe32(nbtasks);
+    uint32_t nbtasks = htobe32(nb_tasks);
     *((uint32_t*)buf) = nbtasks;
     n += sizeof(uint32_t);
 
-    for(int i = 0; i < len; i++){
-        if(t[i].alive){
-            n += write_taskid(buf+n, t[i].taskid);
-            n += write_timing(buf+n, t[i].time);
-            n += write_commandline(buf+n, t[i].cmd);
-        }
+    for(int i = 0; i < nb_tasks; i++){
+        n += write_taskid(buf+n, t[i].taskid);
+        n += write_timing(buf+n, t[i].time);
+        n += write_commandline(buf+n, t[i].cmd);
     }
     return n;
 }

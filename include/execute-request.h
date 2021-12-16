@@ -7,6 +7,6 @@
 #include <errno.h>
 
 void create(task t);
-int list(char *buf, task *t, int len);
+int list(char *buf, task *t, uint32_t nbtasks);
 
 #endif // EXECUTE_REQUEST_H
