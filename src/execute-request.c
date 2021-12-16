@@ -36,7 +36,7 @@ void do_create(task t) {
 
 uint64_t gen_taskid(task *t, int len) {
     uint64_t taskid = 0;
-    while(!task_exist(t,len,taskid)) {
+    while(task_exist(t,len,taskid)) {
         taskid++;
     }
     return taskid;
