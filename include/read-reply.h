@@ -13,6 +13,8 @@
 #include "commandline.h"
 #include "server-reply.h"
 
+uint16_t read_uint16(int fd);
+uint32_t read_uint32(int fd);
 int read_remove(int fd);
 int read_create(int fd);
 uint64_t read_taskid(int fd);
