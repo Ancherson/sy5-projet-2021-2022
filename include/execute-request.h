@@ -7,8 +7,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+int list(char *buf, task *t, uint32_t nbtasks);
 void do_create(task t);
-int create(int fd, char *buf, task **t, int *len);
-int list(char *buf, task *t, int len);
+int create(int fd, char *buf, task **pt, int *len, int *nb_task);
 
 #endif // EXECUTE_REQUEST_H

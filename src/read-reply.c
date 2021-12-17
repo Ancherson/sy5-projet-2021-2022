@@ -5,11 +5,8 @@ int read_remove(int fd) {
     if(rep == 1 || rep == -1) {
         if(rep == 1) {
             printf("Erreur Requête Remove\n");
-            uint16_t errcode;
-            if(read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)) {
-                perror("Erreur read errcode read_remove");
-            }
-            if(be16toh(errcode) == SERVER_REPLY_ERROR_NOT_FOUND) {
+            uint16_t errcode = read_uint16(fd);
+            if(errcode == SERVER_REPLY_ERROR_NOT_FOUND) {
                 printf("Erreur Task Not Found : Requête Remove\n");
             }
         } 
@@ -60,13 +57,7 @@ void print_timing(timing t) {
 }
 
 char *read_string(int fd, uint32_t *l){
-    uint32_t len;
-    if(read(fd, &len, sizeof(uint32_t)) < sizeof(uint32_t)){
-        perror("Erreur read_string lecture de la taille de la string");
-        exit(EXIT_FAILURE);
-    }
-    len = be32toh(len);
-
+    uint32_t len = read_uint32(fd);
 
     char *str = malloc(len + 1);
     if(str == NULL) {
@@ -87,12 +78,7 @@ char *read_string(int fd, uint32_t *l){
 
 
 commandline read_commandline(int fd) {
-    uint32_t argc;
-    if(read(fd, &argc, sizeof(uint32_t)) < sizeof(uint32_t)){
-        perror("Erreur read_commandline lecture du nombre d'argument");
-        exit(EXIT_FAILURE);
-    }
-    argc = be32toh(argc);
+    uint32_t argc = read_uint32(fd);
     commandline cmd;
     alloc_commandline_incomplete(&cmd, argc);
     for(unsigned int i = 0; i < argc; i++) {
@@ -122,12 +108,7 @@ int print_time (int64_t time){
     1 if it's an 'ER' REPTYPE
     0 if it's an 'OK' REPTYPE */
 int read_reptype (int fd){
-    uint16_t rep; 
-    if (read(fd,&rep,sizeof(uint16_t)) != sizeof(uint16_t)){
-        perror("read reptype");
-        return -1;
-    }
-    rep = be16toh (rep);
+    uint16_t rep = read_uint16(fd);
     if (rep == SERVER_REPLY_OK) return EXIT_SUCCESS;
     else return EXIT_FAILURE;
 }
@@ -155,11 +136,7 @@ int read_stdout_stderr(int fd){
         return EXIT_SUCCESS;
     }
     if(rep == 1){
-        uint16_t errcode;
-        if (read(fd, &errcode, sizeof(uint16_t)) < sizeof(uint16_t)){
-            perror("Erreur read_stdout_stderr read errcode");
-            return EXIT_FAILURE;
-        }
+        uint16_t errcode = read_uint16(fd);
         if(errcode == SERVER_REPLY_ERROR_NOT_FOUND){
             printf("Erreur: il n'existe aucune tâche avec cet identifiant\n");
         } else if(errcode == SERVER_REPLY_ERROR_NEVER_RUN){
@@ -178,12 +155,7 @@ int read_list(int fd){
         printf("Erreur read_list reptype anormal\n");
         return EXIT_FAILURE;
     }
-    uint32_t nbtasks;
-    if(read(fd, &nbtasks, sizeof(uint32_t)) < sizeof(uint32_t)){
-        perror("Erreur read_list lecture du nombre de taches");
-        return EXIT_FAILURE;
-    }
-    nbtasks = be32toh(nbtasks);
+    uint32_t nbtasks = read_uint32(fd);
 
     for(unsigned int i = 0; i < nbtasks; i++){
         uint64_t taskid = read_taskid(fd);
@@ -204,11 +176,7 @@ int read_times_exitcode(int fd){
     if (read_reptype(fd) != 0){
         return EXIT_FAILURE;   
     }
-    uint32_t nbRun;
-    if (read(fd,&nbRun,sizeof(uint32_t)) != sizeof(uint32_t)){
-        return EXIT_FAILURE;
-    }
-    nbRun = be32toh(nbRun);
+    uint32_t nbRun = read_uint32(fd);
     for (uint32_t i = 0; i<nbRun;i++){
         int64_t time;
         if (read(fd,&time,sizeof(int64_t)) != sizeof(int64_t)){
@@ -217,13 +185,26 @@ int read_times_exitcode(int fd){
         }
         time = (int64_t) be64toh(time);
         print_time(time);
-        uint16_t exitCode;
-        if (read(fd,&exitCode,sizeof(uint16_t)) != sizeof(uint16_t)){
-            perror ("echec read du exit code");
-            return EXIT_FAILURE;
-        }
-        exitCode = be16toh(exitCode);
+        uint16_t exitCode = read_uint16(fd);
         printf(" %u\n",(unsigned int) exitCode);
     }
     return EXIT_SUCCESS;
+}
+
+uint16_t read_uint16(int fd){
+    uint16_t rep; 
+    if (read(fd,&rep,sizeof(uint16_t)) != sizeof(uint16_t)){
+        perror("echec read uint16");
+        exit(1);
+    }
+    return be16toh (rep);
+}
+
+uint32_t read_uint32(int fd){
+    uint32_t rep; 
+    if (read(fd,&rep,sizeof(uint32_t)) != sizeof(uint32_t)){
+        perror("echec read uint32");
+        exit(1);
+    }
+    return be32toh (rep);
 }
