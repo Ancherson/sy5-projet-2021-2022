@@ -10,5 +10,6 @@
 void do_create(task t);
 int create(int fd, char *buf, task **t, int *len);
 int list(char *buf, task *t, int len);
+int times_exitcodes(int fd, char *buf, task *t, int len);
 
 #endif // EXECUTE_REQUEST_H

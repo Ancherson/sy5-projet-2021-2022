@@ -14,7 +14,7 @@ void do_create(task t) {
         exit(1);
     }
 
-    snprintf(buf, 100,"task/%lu/data", t.taskid);
+    snprintf(buf, 100, "task/%lu/data", t.taskid);
     int fd = open(buf, O_CREAT | O_TRUNC | O_WRONLY, 0750);
 
     if(fd == -1) {
@@ -28,6 +28,19 @@ void do_create(task t) {
     n += write_timing(buf_write + n, t.time);
 
     if(write(fd, buf_write, n) < n) {
+        dprintf(2, "Error write %s\n", buf);
+        exit(1);
+    }
+
+    memset(buf, 0, 100);
+    snprintf(buf, 100, "task/%lu/times_exitcodes", t.taskid);
+    fd = open(buf, O_CREAT | O_TRUNC | O_WRONLY, 0750);
+    if(fd == -1) {
+        dprintf(2, "Error open %s\n", buf);
+        exit(1);
+    }
+    uint32_t nb_runs = 0;
+    if(write(fd, &nb_runs, sizeof(uint32_t)) < sizeof(uint32_t)) {
         dprintf(2, "Error write %s\n", buf);
         exit(1);
     }
@@ -77,6 +90,48 @@ int list(char *buf, task *t, int len){
             n += write_timing(buf+n, t[i].time);
             n += write_commandline(buf+n, t[i].cmd);
         }
+    }
+    return n;
+}
+
+int times_exitcodes(int fd, char *buf, task *t, int len){
+    int n = 0;
+    uint64_t taskid = read_taskid(fd);
+    int i;
+    for(i = 0; i < len; i++){
+        if(t[i].taskid == taskid) break;
+    }
+    if(i == len){
+        *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
+        n += sizeof(uint16_t);
+        *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
+        return n +sizeof(uint16_t);
+    }
+    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
+    n += sizeof(uint16_t);
+
+    char path_buf[100];
+    snprintf(path_buf, 100,"task/%lu/times_exitcodes", taskid);
+    int task_fd = open(path_buf, O_RDONLY);
+    if(task_fd == -1){
+        perror("Erreur open dans times_exitcodes");
+        exit(EXIT_FAILURE);
+    }
+
+    uint32_t nb_runs;
+    if(read(task_fd, &nb_runs, sizeof(uint32_t)) == -1){
+        perror("Erreur read nb_runs dans times_exitcodes");
+        exit(EXIT_FAILURE);
+    }
+    uint32_t be_nb_runs = htobe32(nb_runs);
+    *((uint32_t*)(buf+n)) = be_nb_runs;
+    n += sizeof(uint32_t);
+    read(task_fd, buf+n, nb_runs*(sizeof(int64_t)+sizeof(uint16_t)));
+    for(int i = 0; i < nb_runs; i++){
+        *((int64_t*)(buf+n)) = htobe64(*((int64_t*)(buf+n)));
+        n += sizeof(int64_t);
+        *((uint16_t*)(buf+n)) = htobe16(*((uint16_t*)(buf+n)));
+        n += sizeof(uint16_t);
     }
     return n;
 }
