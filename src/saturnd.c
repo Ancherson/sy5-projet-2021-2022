@@ -41,41 +41,36 @@ void print_task_array(task *t, int len) {
 }
 
 int main(){
-
+    char buf[BUFFER_SIZE];
     int len = 1;
     task *t = create_task_array(len);
 
-    // int len = 3;
-    // task *t = create_task_array(len);
-    // t = test(t, &len);
-    // t = test2(t, &len);
-    // t = test3(t, &len);
-    // remove_task(t, len, 1);
-    // t = test3(t, &len);
-    // t = test(t, &len);
-
     // TODO Lecture des répertoires et ajouté les tasks save dans le tableau
 
-    int fd0 = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK);
+    int fd_request = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK);
+    if(fd_request == -1) {
+        perror("open request");
+        return EXIT_FAILURE;
+    }
     int fd_gohst = open("run/pipes/saturnd-request-pipe", O_WRONLY);
+    if(fd_gohst == -1) {
+        perror("open request gohst");
+        return EXIT_FAILURE;
+    }
 
-    int nfds = fd0+1;
-
-    fd_set fd0_set;
-
-
+    int nfds = fd_request+1;
+    fd_set read_set;
 
     while(1){
         struct timeval timeV;
-        struct timeval * tv = &timeV;
 
-        tv->tv_sec = 10;
-        tv->tv_usec = 0;
+        timeV.tv_sec = 10;
+        timeV.tv_usec = 0;
 
-        FD_ZERO(&fd0_set);
-        FD_SET(fd0,&fd0_set);
+        FD_ZERO(&read_set);
+        FD_SET(fd_request,&read_set);
 
-        int cond = select(nfds,&fd0_set,NULL,NULL,tv);
+        int cond = select(nfds,&read_set,NULL,NULL,&timeV);
         if (cond == 0){
             printf("J'ai rien lu \n");
         }
@@ -83,87 +78,70 @@ int main(){
             perror("PB select saturnd");
             return 1;
         }
-        if(FD_ISSET(fd0, &fd0_set)){
-            uint16_t op_code= read_uint16(fd0);
+        if(FD_ISSET(fd_request, &read_set)){
+            uint16_t op_code= read_uint16(fd_request);
+            //TODO A ne plus hardcoder
+            int fd_reply = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
+            if(fd_reply == -1) {
+                perror("open reply");
+                return EXIT_FAILURE;
+            }
+            int x = 0;
             switch (op_code){
-                
-                case CLIENT_REQUEST_LIST_TASKS :{
-                    int fd1 = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
-                    int x = 0;
-                    char buf[4096];
+                case CLIENT_REQUEST_LIST_TASKS :
                     x += write_opcode(buf, SERVER_REPLY_OK);
                     x += list(buf+x, t, len);
-                    write(fd1, buf, x);
-                    close(fd1);
                     break;
-                }
-                case CLIENT_REQUEST_CREATE_TASK :{
-                     
-                    int fd1 = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
-                    task **pt = &t;
-                    char buf[sizeof(uint16_t)+sizeof(uint64_t)];
-                                       
-
-                    int x = create(fd0,buf,pt,&len);
-                    write(fd1,buf, x);
-                    close(fd1);
+                
+                case CLIENT_REQUEST_CREATE_TASK :            
+                    x += create(fd_request,buf,&t,&len);
                     break;
-                }
 
-                case CLIENT_REQUEST_REMOVE_TASK :{
+                case CLIENT_REQUEST_REMOVE_TASK :
                     return 0;
                     break;
-                }
+        
+                case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
+                    return 0;
+                    break;
 
-                case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :{
+                case CLIENT_REQUEST_TERMINATE :
                     return 0;
                     break;
-                }
-                case CLIENT_REQUEST_TERMINATE :{
-                    return 0;
-                    break;
-                }
-                case CLIENT_REQUEST_GET_STDOUT :{
+                
+                case CLIENT_REQUEST_GET_STDOUT :
                     return 0;
                     break;   
-                }
-                case CLIENT_REQUEST_GET_STDERR :{
+    
+                case CLIENT_REQUEST_GET_STDERR :
                     return 0;
                     break;  
-                }
-                default:{
+                
+                default:
                     return 1;
                     break;
-                }
+                
+            }
+            if(write(fd_reply,buf, x) < x) {
+                perror("write reply");
+                return EXIT_FAILURE;
+            }
+            if(close(fd_reply) == -1) {
+                perror("close reply");
+                return EXIT_FAILURE;
             }
         }
     }
 
+    free_task_array(t, len);
+    if(close(fd_request) == -1) {
+        perror("close request");
+        return EXIT_FAILURE;
+    }
+    if(close(fd_gohst) == -1) {
+        perror("close gohst");
+        return EXIT_FAILURE;
+    }
 
-    // int len = 3;
-    // task *t = create_task_array(len);
-    // t = test(t, &len);
-    // t = test2(t, &len);
-    // t = test3(t, &len);
-    // remove_task(t, len, 1);
-    // t = test3(t, &len);
-    // t = test(t, &len);
-    // print_task_array(t, len);
-    // //create(*t);
-
-    // int fd0 = open("run/pipes/saturnd-request-pipe", O_RDONLY);
-    // char read_buf[sizeof(uint16_t)];
-    // read(fd0, read_buf, sizeof(uint16_t));
-    
-    // int fd = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
-
-    // int n = 0;
-    // char buf[4096];
-    // n += write_opcode(buf, SERVER_REPLY_OK);
-    // n += list(buf+n, t, len);
-    // write(fd, buf, n);
-
-    // free_task_array(t, len);
-
-    return 0;
+    return EXIT_SUCCESS;
 }
