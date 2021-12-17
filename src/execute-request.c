@@ -37,7 +37,7 @@ void do_create(task t) {
 
 uint64_t gen_taskid(task *t, int nb_tasks) {
     uint64_t taskid = 0;
-    while(task_exist(t,nb_tasks,taskid)) {
+    while(get_index(t,nb_tasks,taskid) != -1) {
         taskid++;
     }
     return taskid;
@@ -67,5 +67,49 @@ int list(char *buf, task *t, uint32_t nb_tasks){
         n += write_timing(buf+n, t[i].time);
         n += write_commandline(buf+n, t[i].cmd);
     }
+    return n;
+}
+
+void do_remove(task t) {
+    char dirname[100];
+    char path[100];
+    memset(dirname, 0, 100);
+    snprintf(dirname, 100, "task/%lu", t.taskid);
+
+    DIR *dirp = opendir(dirname);
+    struct dirent *entry;
+    while ((entry = readdir(dirp))) {
+        if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+            memset(path, 0, 100);
+            strcpy(path, dirname);
+            strcat(path, "/");
+            strcat(path, entry->d_name);
+            if(unlink(path) == -1) {
+                perror("unlink do_remove");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    closedir(dirp);
+    if(rmdir(dirname) == -1) {
+        perror("rmdir do_remove");
+        exit(EXIT_FAILURE);
+    }
+}
+
+int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
+    int n = 0;
+    uint64_t taskid = read_taskid(fd);
+    int index = get_index(t, *nb_task, taskid);
+    if(index == -1) {
+        n += write_opcode(buf + n, SERVER_REPLY_ERROR);
+        n += write_opcode(buf + n, SERVER_REPLY_ERROR_NOT_FOUND);
+        return n;
+    }
+
+    do_remove(t[index]);
+    remove_task(t, nb_task, taskid);
+
+    n += write_opcode(buf + n, SERVER_REPLY_OK);
     return n;
 }
