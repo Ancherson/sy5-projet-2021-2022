@@ -66,7 +66,7 @@ int main(){
             switch (op_code){
                 case CLIENT_REQUEST_LIST_TASKS :
                     x += write_opcode(buf, SERVER_REPLY_OK);
-                    x += list(buf+x, t, nb_tasks);
+                    x += list(buf + x, t, nb_tasks);
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
@@ -74,7 +74,7 @@ int main(){
                     break;
 
                 case CLIENT_REQUEST_REMOVE_TASK :
-                    return 0;
+                    x += remove_(fd_request, buf, t, len, &nb_tasks);
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
