@@ -60,63 +60,55 @@ task *init_task(int *len, int *nb_task) {
     return t;
 }
 
-void create_tmp() {
-    char path[4096];
-    memset(path, 0, 4096);
-    snprintf(path, 4096, "/tmp/%s", getenv("USER"));
-    if(mkdir(path, 0750) == -1 && errno != EEXIST) {
-        dprintf(2, "Error mkdir %s\n", path);
-        exit(EXIT_FAILURE);
-    }
-    strcat(path, "/saturnd");
-    if(mkdir(path, 0750) == -1 && errno != EEXIST) {
-        dprintf(2, "Error mkdir %s\n", path);
-        exit(EXIT_FAILURE);
-    }
-    strcat(path, "/pipe");
-    if(mkdir(path, 0750) == -1 && errno != EEXIST) {
-        dprintf(2, "Error mkdir %s\n", path);
-        exit(EXIT_FAILURE);
-    }
-}
+int main(int argc, char **argv){
+    char *pipes_directory = NULL;
+    if(argc < 2) create_tmp();
+    else pipes_directory = argv[1];
 
-int main(){
-    create_tmp();
+    char *pipe_request_file = NULL;
+    char *pipe_reply_file = NULL;
+    if(get_pipes_file(pipes_directory, &pipe_request_file, &pipe_reply_file)) {
+        printf("Erreur construction chaine de caractere des fichiers pipes\n");
+        exit(EXIT_FAILURE);
+    }
 
     char buf[BUFFER_SIZE];
     int nb_tasks;
     int len;
 
     task *t = init_task(&len, &nb_tasks);
-    
-    print_task_array(t, nb_tasks);
 
-    int fd_request = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK|O_CREAT);
+    create_pipes(pipe_request_file, pipe_reply_file);
+
+    int fd_request = open(pipe_request_file, O_RDONLY|O_NONBLOCK);
     if(fd_request == -1) {
         perror("open request");
         return EXIT_FAILURE;
     }
-    int fd_gohst = open("run/pipes/saturnd-request-pipe", O_WRONLY);
+    int fd_gohst = open(pipe_request_file, O_WRONLY);
     if(fd_gohst == -1) {
         perror("open request gohst");
         return EXIT_FAILURE;
     }
 
-    int fd_reply_gohst = open("run/pipes/saturnd-reply-pipe", O_RDONLY | O_NONBLOCK | O_CREAT);
+    int fd_reply_gohst = open(pipe_reply_file, O_RDONLY | O_NONBLOCK);
     if(fd_reply_gohst == -1) {
         perror("Error fd reply gohst");
         return EXIT_FAILURE;
     }
-    int fd_reply = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
+    int fd_reply = open(pipe_reply_file, O_WRONLY);
     if(fd_reply == -1) {
         dprintf(2, "Error fd reply\n");
         return EXIT_FAILURE;
     }
 
+    free(pipe_request_file);
+    free(pipe_reply_file);
+
     int nfds = fd_request+1;
     fd_set read_set;
+    struct timeval timeV;
     while(1){
-        struct timeval timeV;
 
         timeV.tv_sec = 10;
         timeV.tv_usec = 0;
