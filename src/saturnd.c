@@ -78,7 +78,7 @@ int main(){
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
-                    x += times_exitcodes(fd_request, buf, t, len);
+                    x += times_exitcodes(fd_request, buf, t, nb_tasks);
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
@@ -86,12 +86,12 @@ int main(){
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
-                    return 0;
-                    break;   
+                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT);
+                    break;
     
                 case CLIENT_REQUEST_GET_STDERR :
-                    return 0;
-                    break;  
+                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDERR);
+                    break;
                 
                 default:
                     return 1;
