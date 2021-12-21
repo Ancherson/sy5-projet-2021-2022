@@ -15,13 +15,59 @@ void print_task_array(task *t, int nb_tasks) {
     }
 }
 
+task *init_task(int *len, int *nb_task) {
+    *len = 1;
+    *nb_task = 0;
+    task *t = create_task_array(*len);
+
+    char *dirname = "task";
+    char path[1024];
+
+    char * strtoull_endp;
+
+    DIR *dirp = opendir(dirname);
+    if(dirp == NULL) return t;
+    struct dirent *entry;
+    while ((entry = readdir(dirp))) {
+        if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+            memset(path, 0, 1024);
+            snprintf(path, 1024, "%s/%s/data", dirname, entry->d_name);
+            printf("%s\n", path);
+            int fd = open(path, O_RDONLY);
+            if(fd == -1) {
+                dprintf(2, "Error open %s\n", path);
+                exit(EXIT_FAILURE);
+            }
+
+            commandline cmd = read_commandline(fd);
+            timing time = read_timing(fd);
+            uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
+            if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
+                dprintf(2, "Error get taskid %ld\n", taskid);
+                exit(EXIT_FAILURE);
+            }
+
+            t = add_task(t, len, nb_task, taskid, cmd, time);
+
+            if(close(fd) == -1) {
+                dprintf(2, "Error close %s\n", path);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    closedir(dirp);
+
+    return t;
+}
+
 int main(){
     char buf[BUFFER_SIZE];
-    int nb_tasks = 0;
-    int len = 1;
-    task *t = create_task_array(len);
+    int nb_tasks;
+    int len;
 
-    // TODO Lecture des répertoires et ajouté les tasks save dans le tableau
+    task *t = init_task(&len, &nb_tasks);
+    
+    print_task_array(t, nb_tasks);
 
     int fd_request = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK);
     if(fd_request == -1) {
@@ -36,7 +82,7 @@ int main(){
 
     int nfds = fd_request+1;
     fd_set read_set;
-
+    int i = 0;
     while(1){
         struct timeval timeV;
 
