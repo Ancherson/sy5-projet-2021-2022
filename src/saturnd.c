@@ -60,7 +60,29 @@ task *init_task(int *len, int *nb_task) {
     return t;
 }
 
+void create_tmp() {
+    char path[4096];
+    memset(path, 0, 4096);
+    snprintf(path, 4096, "/tmp/%s", getenv("USER"));
+    if(mkdir(path, 0750) == -1 && errno != EEXIST) {
+        dprintf(2, "Error mkdir %s\n", path);
+        exit(EXIT_FAILURE);
+    }
+    strcat(path, "/saturnd");
+    if(mkdir(path, 0750) == -1 && errno != EEXIST) {
+        dprintf(2, "Error mkdir %s\n", path);
+        exit(EXIT_FAILURE);
+    }
+    strcat(path, "/pipe");
+    if(mkdir(path, 0750) == -1 && errno != EEXIST) {
+        dprintf(2, "Error mkdir %s\n", path);
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(){
+    create_tmp();
+
     char buf[BUFFER_SIZE];
     int nb_tasks;
     int len;
@@ -69,7 +91,7 @@ int main(){
     
     print_task_array(t, nb_tasks);
 
-    int fd_request = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK);
+    int fd_request = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK|O_CREAT);
     if(fd_request == -1) {
         perror("open request");
         return EXIT_FAILURE;
@@ -80,9 +102,19 @@ int main(){
         return EXIT_FAILURE;
     }
 
+    int fd_reply_gohst = open("run/pipes/saturnd-reply-pipe", O_RDONLY | O_NONBLOCK | O_CREAT);
+    if(fd_reply_gohst == -1) {
+        perror("Error fd reply gohst");
+        return EXIT_FAILURE;
+    }
+    int fd_reply = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
+    if(fd_reply == -1) {
+        dprintf(2, "Error fd reply\n");
+        return EXIT_FAILURE;
+    }
+
     int nfds = fd_request+1;
     fd_set read_set;
-    int i = 0;
     while(1){
         struct timeval timeV;
 
@@ -103,7 +135,6 @@ int main(){
         if(FD_ISSET(fd_request, &read_set)){
             uint16_t op_code= read_uint16(fd_request);
             //TODO A ne plus hardcoder
-            int fd_reply = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
             if(fd_reply == -1) {
                 perror("open reply");
                 return EXIT_FAILURE;
@@ -148,14 +179,18 @@ int main(){
                 perror("write reply");
                 return EXIT_FAILURE;
             }
-            if(close(fd_reply) == -1) {
-                perror("close reply");
-                return EXIT_FAILURE;
-            }
         }
     }
 
     free_task_array(t, &nb_tasks);
+    if(close(fd_reply) == -1) {
+        perror("close reply");
+        return EXIT_FAILURE;
+    }
+    if(close(fd_reply_gohst) == -1) {
+        perror("close reply gohst");
+        return EXIT_FAILURE;
+    }
     if(close(fd_request) == -1) {
         perror("close request");
         return EXIT_FAILURE;
