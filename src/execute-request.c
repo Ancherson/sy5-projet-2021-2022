@@ -34,19 +34,11 @@ void do_create(task t) {
 }
 
 
-
-uint64_t gen_taskid(task *t, int nb_tasks) {
-    uint64_t taskid = 0;
-    while(get_index(t,nb_tasks,taskid) != -1) {
-        taskid++;
-    }
-    return taskid;
-}
-
-int create(int fd, char *buf, task **pt, int *len, int *nb_task) {
+int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_id) {
     timing time = read_timing(fd);
     commandline c = read_commandline(fd);
-    uint64_t taskid = gen_taskid(*pt, *nb_task);
+    uint64_t taskid = *max_id;
+    *max_id += 1;
 
     *pt = add_task(*pt, len, nb_task,taskid, c, time);
     do_create((*pt)[*nb_task - 1]);
@@ -71,28 +63,12 @@ int list(char *buf, task *t, uint32_t nb_tasks){
 }
 
 void do_remove(task t) {
-    char dirname[100];
     char path[100];
-    memset(dirname, 0, 100);
-    snprintf(dirname, 100, "task/%lu", t.taskid);
+    memset(path, 0, 100);
+    snprintf(path, 100, "task/%lu/data", t.taskid);
 
-    DIR *dirp = opendir(dirname);
-    struct dirent *entry;
-    while ((entry = readdir(dirp))) {
-        if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
-            memset(path, 0, 100);
-            strcpy(path, dirname);
-            strcat(path, "/");
-            strcat(path, entry->d_name);
-            if(unlink(path) == -1) {
-                perror("unlink do_remove");
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
-    closedir(dirp);
-    if(rmdir(dirname) == -1) {
-        perror("rmdir do_remove");
+    if(unlink(path) == -1) {
+        dprintf(2, "Error unlink %s\n", path);
         exit(EXIT_FAILURE);
     }
 }

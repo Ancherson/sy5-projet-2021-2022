@@ -1,8 +1,8 @@
 #include "saturnd.h"
 
 void print_task(task *t) {
-    printf("taskid = %lu\n", t->taskid);
-    printf("commandline : ");
+    printf("ID : %lu, ", t->taskid);
+    printf("CMD : ");
     for(int i = 0; i < t->cmd.argc; i++) {
         printf("%s ", t->cmd.argv[i].str);
     }
@@ -15,9 +15,10 @@ void print_task_array(task *t, int nb_tasks) {
     }
 }
 
-task *init_task(int *len, int *nb_task) {
+task *init_task(int *len, int *nb_task, uint64_t *max_id) {
     *len = 1;
     *nb_task = 0;
+    *max_id = 0;
     task *t = create_task_array(*len);
 
     char *dirname = "task";
@@ -33,19 +34,24 @@ task *init_task(int *len, int *nb_task) {
             memset(path, 0, 1024);
             snprintf(path, 1024, "%s/%s/data", dirname, entry->d_name);
             printf("%s\n", path);
+            uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
+            if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
+                dprintf(2, "Error get taskid %ld\n", taskid);
+                exit(EXIT_FAILURE);
+            }
+            if(taskid >= *max_id) *max_id = taskid + 1;
             int fd = open(path, O_RDONLY);
+            if(fd == -1 && errno == ENOENT) {
+                continue;    
+            }
             if(fd == -1) {
+                printf("%d\n", errno);
                 dprintf(2, "Error open %s\n", path);
                 exit(EXIT_FAILURE);
             }
 
             commandline cmd = read_commandline(fd);
             timing time = read_timing(fd);
-            uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
-            if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
-                dprintf(2, "Error get taskid %ld\n", taskid);
-                exit(EXIT_FAILURE);
-            }
 
             t = add_task(t, len, nb_task, taskid, cmd, time);
 
@@ -75,8 +81,9 @@ int main(int argc, char **argv){
     char buf[BUFFER_SIZE];
     int nb_tasks;
     int len;
+    uint64_t max_id;
 
-    task *t = init_task(&len, &nb_tasks);
+    task *t = init_task(&len, &nb_tasks, &max_id);
 
     create_pipes(pipe_request_file, pipe_reply_file);
 
@@ -139,7 +146,7 @@ int main(int argc, char **argv){
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
-                    x += create(fd_request,buf,&t,&len,&nb_tasks);
+                    x += create(fd_request,buf,&t,&len,&nb_tasks,&max_id);
                     break;
 
                 case CLIENT_REQUEST_REMOVE_TASK :
