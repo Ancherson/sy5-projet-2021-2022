@@ -142,3 +142,5 @@ int times_exitcodes(int fd, char *buf, task *t, int len){
         *((uint16_t*)(buf+n)) = htobe16(*((uint16_t*)(buf+n)));
         n += sizeof(uint16_t);
     }
+    return n;
+}
