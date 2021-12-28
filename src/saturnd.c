@@ -154,7 +154,7 @@ int main(int argc, char **argv){
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
-                    x += times_exitcodes(fd_request, buf, t, len);
+                    x += times_exitcodes(fd_request, buf, t, nb_tasks, max_id);
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
@@ -162,12 +162,12 @@ int main(int argc, char **argv){
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
-                    return 0;
-                    break;   
+                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
+                    break;
     
                 case CLIENT_REQUEST_GET_STDERR :
-                    return 0;
-                    break;  
+                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
+                    break;
                 
                 default:
                     return 1;

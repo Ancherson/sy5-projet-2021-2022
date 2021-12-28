@@ -103,14 +103,10 @@ int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
     return n;
 }
 
-int times_exitcodes(int fd, char *buf, task *t, int len){
+int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
     int n = 0;
     uint64_t taskid = read_taskid(fd);
-    int i;
-    for(i = 0; i < len; i++){
-        if(t[i].taskid == taskid) break;
-    }
-    if(i == len){
+    if(taskid >= max_id){
         *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
         n += sizeof(uint16_t);
         *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
@@ -142,5 +138,56 @@ int times_exitcodes(int fd, char *buf, task *t, int len){
         *((uint16_t*)(buf+n)) = htobe16(*((uint16_t*)(buf+n)));
         n += sizeof(uint16_t);
     }
+    return n;
+}
+
+int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
+    int n = 0;
+    uint64_t taskid = read_taskid(fd);
+    if(taskid >= max_id){
+        *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
+        n += sizeof(uint16_t);
+        *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
+        return n +sizeof(uint16_t);
+    }
+
+    char path_buf[100];
+    if(opcode == CLIENT_REQUEST_GET_STDOUT){
+        snprintf(path_buf, 100,"task/%lu/stdout", taskid);
+    } else {
+        snprintf(path_buf, 100,"task/%lu/stderr", taskid);
+    }
+    int task_fd = open(path_buf, O_RDONLY);
+    if(task_fd == -1){
+        if(errno == ENOENT){
+            *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
+            n += sizeof(uint16_t);
+            *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NEVER_RUN);
+            return n +sizeof(uint16_t);
+        } else {
+            perror("Erreur open dans stdout_stderr");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
+    n += sizeof(uint16_t);
+
+    int l = lseek(task_fd, 0, SEEK_END);
+    lseek(task_fd, 0, SEEK_SET);
+    if(l == -1){
+        perror("Erreur lseek dans stdout_stderr");
+        exit(EXIT_FAILURE);
+    }
+    string s;
+    s.len = l;
+    char b[l];
+    s.str = b;
+    int r = read(task_fd, b, l);
+    if(r == -1){
+        perror("Erreur read dans stdout_stderr");
+        exit(EXIT_FAILURE);
+    }
+    n += write_string(buf+n, s);
     return n;
 }
