@@ -1,8 +1,8 @@
 #include "saturnd.h"
 
 void print_task(task *t) {
-    printf("taskid = %lu\n", t->taskid);
-    printf("commandline : ");
+    printf("ID : %lu, ", t->taskid);
+    printf("CMD : ");
     for(int i = 0; i < t->cmd.argc; i++) {
         printf("%s ", t->cmd.argv[i].str);
     }
@@ -15,30 +15,107 @@ void print_task_array(task *t, int nb_tasks) {
     }
 }
 
-int main(){
+task *init_task(int *len, int *nb_task, uint64_t *max_id) {
+    *len = 1;
+    *nb_task = 0;
+    *max_id = 0;
+    task *t = create_task_array(*len);
+
+    char *dirname = "task";
+    char path[1024];
+
+    char * strtoull_endp;
+
+    DIR *dirp = opendir(dirname);
+    if(dirp == NULL) return t;
+    struct dirent *entry;
+    while ((entry = readdir(dirp))) {
+        if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+            memset(path, 0, 1024);
+            snprintf(path, 1024, "%s/%s/data", dirname, entry->d_name);
+            printf("%s\n", path);
+            uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
+            if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
+                dprintf(2, "Error get taskid %ld\n", taskid);
+                exit(EXIT_FAILURE);
+            }
+            if(taskid >= *max_id) *max_id = taskid + 1;
+            int fd = open(path, O_RDONLY);
+            if(fd == -1 && errno == ENOENT) {
+                continue;    
+            }
+            if(fd == -1) {
+                printf("%d\n", errno);
+                dprintf(2, "Error open %s\n", path);
+                exit(EXIT_FAILURE);
+            }
+
+            commandline cmd = read_commandline(fd);
+            timing time = read_timing(fd);
+
+            t = add_task(t, len, nb_task, taskid, cmd, time);
+
+            if(close(fd) == -1) {
+                dprintf(2, "Error close %s\n", path);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    closedir(dirp);
+
+    return t;
+}
+
+int main(int argc, char **argv){
+    char *pipes_directory = NULL;
+    if(argc < 2) create_tmp();
+    else pipes_directory = argv[1];
+
+    char *pipe_request_file = NULL;
+    char *pipe_reply_file = NULL;
+    if(get_pipes_file(pipes_directory, &pipe_request_file, &pipe_reply_file)) {
+        printf("Erreur construction chaine de caractere des fichiers pipes\n");
+        exit(EXIT_FAILURE);
+    }
+
     char buf[BUFFER_SIZE];
-    int nb_tasks = 0;
-    int len = 1;
-    task *t = create_task_array(len);
+    int nb_tasks;
+    int len;
+    uint64_t max_id;
 
-    // TODO Lecture des répertoires et ajouté les tasks save dans le tableau
+    task *t = init_task(&len, &nb_tasks, &max_id);
 
-    int fd_request = open("run/pipes/saturnd-request-pipe", O_RDONLY|O_NONBLOCK);
+    create_pipes(pipe_request_file, pipe_reply_file);
+
+    int fd_request = open(pipe_request_file, O_RDONLY|O_NONBLOCK);
     if(fd_request == -1) {
         perror("open request");
         return EXIT_FAILURE;
     }
-    int fd_gohst = open("run/pipes/saturnd-request-pipe", O_WRONLY);
+    int fd_gohst = open(pipe_request_file, O_WRONLY);
     if(fd_gohst == -1) {
         perror("open request gohst");
         return EXIT_FAILURE;
     }
 
+    int fd_reply_gohst = open(pipe_reply_file, O_RDONLY | O_NONBLOCK);
+    if(fd_reply_gohst == -1) {
+        perror("Error fd reply gohst");
+        return EXIT_FAILURE;
+    }
+    int fd_reply = open(pipe_reply_file, O_WRONLY);
+    if(fd_reply == -1) {
+        dprintf(2, "Error fd reply\n");
+        return EXIT_FAILURE;
+    }
+
+    free(pipe_request_file);
+    free(pipe_reply_file);
+
     int nfds = fd_request+1;
     fd_set read_set;
-
+    struct timeval timeV;
     while(1){
-        struct timeval timeV;
 
         timeV.tv_sec = 10;
         timeV.tv_usec = 0;
@@ -57,7 +134,6 @@ int main(){
         if(FD_ISSET(fd_request, &read_set)){
             uint16_t op_code= read_uint16(fd_request);
             //TODO A ne plus hardcoder
-            int fd_reply = open("run/pipes/saturnd-reply-pipe", O_WRONLY);
             if(fd_reply == -1) {
                 perror("open reply");
                 return EXIT_FAILURE;
@@ -66,15 +142,15 @@ int main(){
             switch (op_code){
                 case CLIENT_REQUEST_LIST_TASKS :
                     x += write_opcode(buf, SERVER_REPLY_OK);
-                    x += list(buf+x, t, nb_tasks);
+                    x += list(buf + x, t, nb_tasks);
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
-                    x += create(fd_request,buf,&t,&len,&nb_tasks);
+                    x += create(fd_request,buf,&t,&len,&nb_tasks,&max_id);
                     break;
 
                 case CLIENT_REQUEST_REMOVE_TASK :
-                    return 0;
+                    x += remove_(fd_request, buf, t, len, &nb_tasks);
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
@@ -102,14 +178,18 @@ int main(){
                 perror("write reply");
                 return EXIT_FAILURE;
             }
-            if(close(fd_reply) == -1) {
-                perror("close reply");
-                return EXIT_FAILURE;
-            }
         }
     }
 
     free_task_array(t, &nb_tasks);
+    if(close(fd_reply) == -1) {
+        perror("close reply");
+        return EXIT_FAILURE;
+    }
+    if(close(fd_reply_gohst) == -1) {
+        perror("close reply gohst");
+        return EXIT_FAILURE;
+    }
     if(close(fd_request) == -1) {
         perror("close request");
         return EXIT_FAILURE;

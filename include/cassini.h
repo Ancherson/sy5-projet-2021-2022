@@ -17,6 +17,7 @@
 #include "commandline.h"
 #include "write-request.h"
 #include "read-reply.h"
+#include "open-pipe.h"
 
 #include "client-request.h"
 #include "server-reply.h"
