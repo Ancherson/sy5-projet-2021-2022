@@ -154,7 +154,7 @@ int main(int argc, char **argv){
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
-                    return 0;
+                    x += times_exitcodes(fd_request, buf, t, len);
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
