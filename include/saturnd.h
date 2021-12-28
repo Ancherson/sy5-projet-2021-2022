@@ -6,6 +6,7 @@
 #include "server-reply.h"
 #include "read-reply.h"
 #include "client-request.h"
+#include "open-pipe.h"
 
 
 #include <sys/time.h>

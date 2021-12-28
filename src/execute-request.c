@@ -47,19 +47,11 @@ void do_create(task t) {
 }
 
 
-
-uint64_t gen_taskid(task *t, int nb_tasks) {
-    uint64_t taskid = 0;
-    while(task_exist(t,nb_tasks,taskid)) {
-        taskid++;
-    }
-    return taskid;
-}
-
-int create(int fd, char *buf, task **pt, int *len, int *nb_task) {
+int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_id) {
     timing time = read_timing(fd);
     commandline c = read_commandline(fd);
-    uint64_t taskid = gen_taskid(*pt, *nb_task);
+    uint64_t taskid = *max_id;
+    *max_id += 1;
 
     *pt = add_task(*pt, len, nb_task,taskid, c, time);
     do_create((*pt)[*nb_task - 1]);
@@ -83,14 +75,38 @@ int list(char *buf, task *t, uint32_t nb_tasks){
     return n;
 }
 
-int times_exitcodes(int fd, char *buf, task *t, int nb_tasks){
+void do_remove(task t) {
+    char path[100];
+    memset(path, 0, 100);
+    snprintf(path, 100, "task/%lu/data", t.taskid);
+
+    if(unlink(path) == -1) {
+        dprintf(2, "Error unlink %s\n", path);
+        exit(EXIT_FAILURE);
+    }
+}
+
+int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
     int n = 0;
     uint64_t taskid = read_taskid(fd);
-    int i;
-    for(i = 0; i < nb_tasks; i++){
-        if(t[i].taskid == taskid) break;
+    int index = get_index(t, *nb_task, taskid);
+    if(index == -1) {
+        n += write_opcode(buf + n, SERVER_REPLY_ERROR);
+        n += write_opcode(buf + n, SERVER_REPLY_ERROR_NOT_FOUND);
+        return n;
     }
-    if(i == nb_tasks){
+
+    do_remove(t[index]);
+    remove_task(t, nb_task, taskid);
+
+    n += write_opcode(buf + n, SERVER_REPLY_OK);
+    return n;
+}
+
+int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
+    int n = 0;
+    uint64_t taskid = read_taskid(fd);
+    if(taskid >= max_id){
         *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
         n += sizeof(uint16_t);
         *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
@@ -125,14 +141,10 @@ int times_exitcodes(int fd, char *buf, task *t, int nb_tasks){
     return n;
 }
 
-int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode){
+int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
     int n = 0;
     uint64_t taskid = read_taskid(fd);
-    int i;
-    for(i = 0; i < nb_tasks; i++){
-        if(t[i].taskid == taskid) break;
-    }
-    if(i == nb_tasks){
+    if(taskid >= max_id){
         *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
         n += sizeof(uint16_t);
         *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
