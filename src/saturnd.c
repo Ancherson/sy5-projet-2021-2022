@@ -178,6 +178,10 @@ int main(int argc, char **argv){
                 perror("write reply");
                 return EXIT_FAILURE;
             }
+        } else {
+            for(int i = 0; i < nb_tasks; i++) {
+                execute_task(t[i]);
+            } 
         }
     }
 
