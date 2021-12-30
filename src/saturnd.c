@@ -66,6 +66,23 @@ task *init_task(int *len, int *nb_task, uint64_t *max_id) {
     return t;
 }
 
+void launch_executable_tasks(task *t, int nb_tasks){
+    time_t current_time;
+    struct tm ts;
+    time(&current_time);
+    ts = *localtime(&current_time);
+    timing current_timing;
+    current_timing.minutes = 1 << ts.tm_min;
+    current_timing.hours = 1 << ts.tm_hour;
+    current_timing.daysofweek = 1 << ts.tm_wday;
+    for(int i = 0; i < nb_tasks; i++){
+        if((current_timing.minutes & t[i].time.minutes) && (current_timing.hours & t[i].time.hours) && (current_timing.daysofweek & t[i].time.daysofweek)){
+            //launch execute_task
+            printf("It is time for task %lu to be executed\n", t[i].taskid);
+        }
+    }
+}
+
 int main(int argc, char **argv){
     char *pipes_directory = NULL;
     if(argc < 2) create_tmp();
@@ -84,6 +101,7 @@ int main(int argc, char **argv){
     uint64_t max_id;
 
     task *t = init_task(&len, &nb_tasks, &max_id);
+    launch_executable_tasks(t, nb_tasks);
 
     create_pipes(pipe_request_file, pipe_reply_file);
 
@@ -178,6 +196,8 @@ int main(int argc, char **argv){
                 perror("write reply");
                 return EXIT_FAILURE;
             }
+        } else {
+            launch_executable_tasks(t, nb_tasks);
         }
     }
 
