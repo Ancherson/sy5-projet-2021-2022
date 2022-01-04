@@ -16,5 +16,6 @@ int write_commandline(char *buf, commandline str);
 void alloc_commandline_incomplete(commandline *dest, uint32_t argc);
 void alloc_commandline(commandline *dest, uint32_t argc, char **argv);
 void free_commandline(commandline *c);
+char **get_arg(char **tab, commandline cmd);
 
 #endif // COMMANDLINE

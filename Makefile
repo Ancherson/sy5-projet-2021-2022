@@ -1,7 +1,7 @@
 all: saturnd cassini
 
-saturnd: saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o read-reply.o open-pipe.o
-	gcc saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o read-reply.o open-pipe.o -o saturnd
+saturnd: saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o read-reply.o open-pipe.o run.o
+	gcc saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-request.o read-reply.o open-pipe.o run.o -o saturnd
 
 cassini: cassini.o commandline.o string2.o timing-text-io.o write-request.o read-reply.o open-pipe.o
 	gcc cassini.o commandline.o string2.o timing-text-io.o write-request.o read-reply.o open-pipe.o -o cassini
@@ -35,6 +35,9 @@ read-reply.o: src/read-reply.c
 
 open-pipe.o: src/open-pipe.c
 	gcc -c -Iinclude -Wall src/open-pipe.c
+
+run.o: src/run.c
+	gcc -c -Iinclude -Wall src/run.c
 
 distclean:
 	rm -f *.o cassini saturnd
