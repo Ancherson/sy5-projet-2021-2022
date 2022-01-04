@@ -128,6 +128,7 @@ int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
         perror("Erreur read nb_runs dans times_exitcodes");
         exit(EXIT_FAILURE);
     }
+    
     uint32_t be_nb_runs = htobe32(nb_runs);
     *((uint32_t*)(buf+n)) = be_nb_runs;
     n += sizeof(uint32_t);

@@ -37,3 +37,10 @@ void free_commandline(commandline *c) {
     }
     free(c->argv);
 }
+
+char **get_arg(char **tab, commandline cmd) {
+    for(uint32_t i = 0; i < cmd.argc; i++) {
+        tab[i] = cmd.argv[i].str;
+    }
+    return tab;
+}
