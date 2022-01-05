@@ -124,6 +124,7 @@ int main(int argc, char **argv){
                     break;
                 
             }
+            //write_pipebuf(fd_reply, buf, x);
             if(write(fd_reply,buf, x) < x) {
                 perror("write reply");
                 return EXIT_FAILURE;
