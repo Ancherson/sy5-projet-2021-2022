@@ -11,6 +11,8 @@
 #include "timing-text-io.h"
 #include "commandline.h"
 
+/* Ensemble de fonctions qui permettent l'écriture de données */
+
 int write_opcode(char * buf, uint16_t opcode);
 int write_timing_from_strings(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str);
 int write_timing(char * buf, timing t);

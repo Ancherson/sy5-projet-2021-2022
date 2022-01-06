@@ -5,12 +5,15 @@
 #include "commandline.h"
 #include "timing.h"
 
+/* Structure représentant une tâche à effectuer par le démons */
 typedef struct task {
     uint64_t taskid;
     commandline cmd;
     timing time;
 } task;
 
+
+/* Ensemble de fonctions permettant la manipulation de d'une task, et d'un tableau de task */
 void create_task(task *t, uint64_t taskid, commandline c, timing time);
 void free_task(task *t);
 task *create_task_array(int len);
