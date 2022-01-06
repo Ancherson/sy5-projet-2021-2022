@@ -1,10 +1,10 @@
 all: saturnd cassini
 
-saturnd: saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-data.o read-reply.o open-pipe.o run.o
-	gcc saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-data.o read-reply.o open-pipe.o run.o -o saturnd
+saturnd: saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-data.o read-data.o open-pipe.o run.o
+	gcc saturnd.o execute-request.o string2.o timing-text-io.o commandline.o task.o write-data.o read-data.o open-pipe.o run.o -o saturnd
 
-cassini: cassini.o commandline.o string2.o timing-text-io.o write-data.o read-reply.o open-pipe.o
-	gcc cassini.o commandline.o string2.o timing-text-io.o write-data.o read-reply.o open-pipe.o -o cassini
+cassini: cassini.o commandline.o string2.o timing-text-io.o write-data.o read-data.o open-pipe.o
+	gcc cassini.o commandline.o string2.o timing-text-io.o write-data.o read-data.o open-pipe.o -o cassini
 
 cassini.o: src/cassini.c
 	gcc -c -Iinclude -Wall src/cassini.c
@@ -30,8 +30,8 @@ timing-text-io.o: src/timing-text-io.c
 write-data.o: src/write-data.c
 	gcc -c -Iinclude -Wall src/write-data.c
 
-read-reply.o: src/read-reply.c
-	gcc -c -Iinclude -Wall src/read-reply.c
+read-data.o: src/read-data.c
+	gcc -c -Iinclude -Wall src/read-data.c
 
 open-pipe.o: src/open-pipe.c
 	gcc -c -Iinclude -Wall src/open-pipe.c
