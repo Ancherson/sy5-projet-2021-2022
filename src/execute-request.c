@@ -103,17 +103,19 @@ int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
     return n;
 }
 
-int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
+void times_exitcodes(int fd, int fd_reply, task *t, int nb_tasks, uint64_t max_id){
+    int len;
     int n = 0;
     uint64_t taskid = read_taskid(fd);
     if(taskid >= max_id){
+        len = 2*sizeof(uint16_t);
+        char buf[len];
         *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
         n += sizeof(uint16_t);
         *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
-        return n +sizeof(uint16_t);
+        write_pipebuf(fd_reply, buf, len);
+        return;
     }
-    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
-    n += sizeof(uint16_t);
 
     char path_buf[100];
     snprintf(path_buf, 100,"task/%lu/times_exitcodes", taskid);
@@ -129,6 +131,11 @@ int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
         exit(EXIT_FAILURE);
     }
     
+    len = sizeof(uint16_t) + sizeof(uint32_t) + nb_runs*(sizeof(int64_t)+sizeof(uint16_t));
+    char buf[len];
+
+    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
+    n += sizeof(uint16_t);
     uint32_t be_nb_runs = htobe32(nb_runs);
     *((uint32_t*)(buf+n)) = be_nb_runs;
     n += sizeof(uint32_t);
@@ -139,17 +146,21 @@ int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
         *((uint16_t*)(buf+n)) = htobe16(*((uint16_t*)(buf+n)));
         n += sizeof(uint16_t);
     }
-    return n;
+    write_pipebuf(fd_reply, buf, len);
 }
 
-int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
+void stdout_stderr(int fd, int fd_reply, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
+    int len;
     int n = 0;
     uint64_t taskid = read_taskid(fd);
     if(taskid >= max_id){
+        len = 2*sizeof(uint16_t);
+        char buf[len];
         *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
         n += sizeof(uint16_t);
         *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
-        return n +sizeof(uint16_t);
+        write_pipebuf(fd_reply, buf, len);
+        return;
     }
 
     char path_buf[100];
@@ -161,18 +172,18 @@ int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode, uin
     int task_fd = open(path_buf, O_RDONLY);
     if(task_fd == -1){
         if(errno == ENOENT){
+            len = 2*sizeof(uint16_t);
+            char buf[len];
             *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
             n += sizeof(uint16_t);
             *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NEVER_RUN);
-            return n +sizeof(uint16_t);
+            write_pipebuf(fd_reply, buf, len);
+            return;
         } else {
             perror("Erreur open dans stdout_stderr");
             exit(EXIT_FAILURE);
         }
     }
-
-    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
-    n += sizeof(uint16_t);
 
     int l = lseek(task_fd, 0, SEEK_END);
     lseek(task_fd, 0, SEEK_SET);
@@ -189,6 +200,12 @@ int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode, uin
         perror("Erreur read dans stdout_stderr");
         exit(EXIT_FAILURE);
     }
-    n += write_string(buf+n, s);
-    return n;
+    
+    len = sizeof(uint16_t) + sizeof(uint32_t) + l;
+    char buf[len];
+
+    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
+    n += sizeof(uint16_t);
+    write_string(buf+n, s);
+    write_pipebuf(fd_reply, buf, len);
 }

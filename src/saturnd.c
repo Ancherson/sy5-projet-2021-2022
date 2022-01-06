@@ -104,7 +104,7 @@ int main(int argc, char **argv){
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
-                    x += times_exitcodes(fd_request, buf, t, nb_tasks, max_id);
+                    times_exitcodes(fd_request, fd_reply, t, nb_tasks, max_id);
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
@@ -112,11 +112,11 @@ int main(int argc, char **argv){
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
-                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
+                    stdout_stderr(fd_request, fd_reply, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
                     break;
     
                 case CLIENT_REQUEST_GET_STDERR :
-                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
+                    stdout_stderr(fd_request, fd_reply, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
                     break;
                 
                 default:
@@ -125,9 +125,11 @@ int main(int argc, char **argv){
                 
             }
             //write_pipebuf(fd_reply, buf, x);
-            if(write(fd_reply,buf, x) < x) {
-                perror("write reply");
-                return EXIT_FAILURE;
+            if(op_code != CLIENT_REQUEST_GET_TIMES_AND_EXITCODES && op_code != CLIENT_REQUEST_GET_STDERR && op_code != CLIENT_REQUEST_GET_STDOUT){
+                if(write(fd_reply,buf, x) < x) {
+                    perror("write reply");
+                    return EXIT_FAILURE;
+                }
             }
         } else {
             launch_executable_tasks(t, nb_tasks);
