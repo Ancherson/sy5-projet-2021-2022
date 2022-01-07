@@ -61,18 +61,25 @@ int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_i
     return n;
 }
 
-int list(char *buf, task *t, uint32_t nb_tasks){
+void list(int fd_reply, task *t, uint32_t nb_tasks){
+    int len = sizeof(uint16_t)+sizeof(uint32_t)+nb_tasks*(sizeof(uint64_t)+TIMING_SIZE+sizeof(uint32_t));
+    for(int i = 0; i < nb_tasks; i++){
+        len += t[i].cmd.argc*sizeof(uint32_t);
+        for(int j = 0; j < t[i].cmd.argc; j++){
+            len += t[i].cmd.argv[j].len;
+        }
+    }
+    char buf[len];
     int n = 0;
-    uint32_t nbtasks = htobe32(nb_tasks);
-    *((uint32_t*)buf) = nbtasks;
+    n += write_opcode(buf, SERVER_REPLY_OK);
+    *((uint32_t*)(buf+n)) = htobe32(nb_tasks);
     n += sizeof(uint32_t);
-
     for(int i = 0; i < nb_tasks; i++){
         n += write_taskid(buf+n, t[i].taskid);
         n += write_timing(buf+n, t[i].time);
         n += write_commandline(buf+n, t[i].cmd);
     }
-    return n;
+    write_pipebuf(fd_reply, buf, len);
 }
 
 void do_remove(task t) {
@@ -130,12 +137,11 @@ void times_exitcodes(int fd, int fd_reply, task *t, int nb_tasks, uint64_t max_i
         perror("Erreur read nb_runs dans times_exitcodes");
         exit(EXIT_FAILURE);
     }
-    
+
     len = sizeof(uint16_t) + sizeof(uint32_t) + nb_runs*(sizeof(int64_t)+sizeof(uint16_t));
     char buf[len];
 
-    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
-    n += sizeof(uint16_t);
+    n += write_opcode(buf, SERVER_REPLY_OK);
     uint32_t be_nb_runs = htobe32(nb_runs);
     *((uint32_t*)(buf+n)) = be_nb_runs;
     n += sizeof(uint32_t);
@@ -204,8 +210,7 @@ void stdout_stderr(int fd, int fd_reply, task *t, int nb_tasks, uint16_t opcode,
     len = sizeof(uint16_t) + sizeof(uint32_t) + l;
     char buf[len];
 
-    *((uint16_t*)buf) = htobe16(SERVER_REPLY_OK);
-    n += sizeof(uint16_t);
+    n += write_opcode(buf, SERVER_REPLY_OK);
     write_string(buf+n, s);
     write_pipebuf(fd_reply, buf, len);
 }

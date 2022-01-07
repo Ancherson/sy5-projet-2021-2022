@@ -91,8 +91,7 @@ int main(int argc, char **argv){
             int x = 0;
             switch (op_code){
                 case CLIENT_REQUEST_LIST_TASKS :
-                    x += write_opcode(buf, SERVER_REPLY_OK);
-                    x += list(buf + x, t, nb_tasks);
+                    list(fd_reply, t, nb_tasks);
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
@@ -124,13 +123,7 @@ int main(int argc, char **argv){
                     break;
                 
             }
-            //write_pipebuf(fd_reply, buf, x);
-            if(op_code != CLIENT_REQUEST_GET_TIMES_AND_EXITCODES && op_code != CLIENT_REQUEST_GET_STDERR && op_code != CLIENT_REQUEST_GET_STDOUT){
-                if(write(fd_reply,buf, x) < x) {
-                    perror("write reply");
-                    return EXIT_FAILURE;
-                }
-            }
+            if(x > 0) write_pipebuf(fd_reply, buf, x);
         } else {
             launch_executable_tasks(t, nb_tasks);
         }

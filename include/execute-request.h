@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 
-int list(char *buf, task *t, uint32_t nbtasks);
+void list(int fd_reply, task *t, uint32_t nbtasks);
 int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_id);
 int remove_(int fd, char *buf, task *t, int len, int *nb_task);
 void times_exitcodes(int fd, int fd_reply, task *t, int len, uint64_t max_id);
