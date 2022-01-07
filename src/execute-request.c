@@ -47,7 +47,7 @@ void do_create(task t) {
 }
 
 
-int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_id) {
+void create(int fd, int fd_reply, task **pt, int *len, int *nb_task, uint64_t *max_id) {
     timing time = read_timing(fd);
     commandline c = read_commandline(fd);
     uint64_t taskid = *max_id;
@@ -56,9 +56,11 @@ int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_i
     *pt = add_task(*pt, len, nb_task,taskid, c, time);
     do_create((*pt)[*nb_task - 1]);
 
+    int buf_len = sizeof(uint16_t)+sizeof(uint64_t);
+    char buf[buf_len];
     int n = write_opcode(buf, SERVER_REPLY_OK);
-    n += write_taskid(buf + n, taskid);
-    return n;
+    write_taskid(buf + n, taskid);
+    write_pipebuf(fd_reply, buf, buf_len);
 }
 
 void list(int fd_reply, task *t, uint32_t nb_tasks){
@@ -93,21 +95,28 @@ void do_remove(task t) {
     }
 }
 
-int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
+void remove_(int fd, int fd_reply, task *t, int len, int *nb_task) {
     int n = 0;
+    int buf_len;
     uint64_t taskid = read_taskid(fd);
     int index = get_index(t, *nb_task, taskid);
     if(index == -1) {
-        n += write_opcode(buf + n, SERVER_REPLY_ERROR);
-        n += write_opcode(buf + n, SERVER_REPLY_ERROR_NOT_FOUND);
-        return n;
+        buf_len = 2*sizeof(uint16_t);
+        char buf[buf_len];
+        *((uint16_t*)buf) = htobe16(SERVER_REPLY_ERROR);
+        n += sizeof(uint16_t);
+        *((uint16_t*)(buf+n)) = htobe16(SERVER_REPLY_ERROR_NOT_FOUND);
+        write_pipebuf(fd_reply, buf, buf_len);
+        return;
     }
 
     do_remove(t[index]);
     remove_task(t, nb_task, taskid);
 
-    n += write_opcode(buf + n, SERVER_REPLY_OK);
-    return n;
+    buf_len = sizeof(uint16_t);
+    char buf[buf_len];
+    write_opcode(buf, SERVER_REPLY_OK);
+    write_pipebuf(fd_reply, buf, buf_len);
 }
 
 void times_exitcodes(int fd, int fd_reply, task *t, int nb_tasks, uint64_t max_id){

@@ -27,7 +27,6 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    char buf[BUFFER_SIZE];
     int nb_tasks;
     int len;
     uint64_t max_id;
@@ -88,18 +87,17 @@ int main(int argc, char **argv){
                 perror("open reply");
                 return EXIT_FAILURE;
             }
-            int x = 0;
             switch (op_code){
                 case CLIENT_REQUEST_LIST_TASKS :
                     list(fd_reply, t, nb_tasks);
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
-                    x += create(fd_request,buf,&t,&len,&nb_tasks,&max_id);
+                    create(fd_request, fd_reply, &t, &len, &nb_tasks, &max_id);
                     break;
 
                 case CLIENT_REQUEST_REMOVE_TASK :
-                    x += remove_(fd_request, buf, t, len, &nb_tasks);
+                    remove_(fd_request, fd_reply, t, len, &nb_tasks);
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
@@ -123,7 +121,6 @@ int main(int argc, char **argv){
                     break;
                 
             }
-            if(x > 0) write_pipebuf(fd_reply, buf, x);
         } else {
             launch_executable_tasks(t, nb_tasks);
         }
