@@ -58,19 +58,34 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    free(pipe_request_file);
-    free(pipe_reply_file);
 
     int nfds = fd_request+1;
     fd_set read_set;
     struct timeval timeV;
-    while(1){
+    timeV.tv_sec = 60;
+    timeV.tv_usec = 0;
+    time_t current_time;
+    struct tm ts;
+    time(&current_time);
+    ts = *localtime(&current_time);
+    int last_minute = ts.tm_min;
+    int running = 1;
+    while(running){
+        time(&current_time);
+        ts = *localtime(&current_time);
+        if((timeV.tv_sec == 0 && timeV.tv_usec == 0) || last_minute != ts.tm_min){
+            launch_executable_tasks(t, nb_tasks);
+            time(&current_time);
+            ts = *localtime(&current_time);
 
-        timeV.tv_sec = 10;
+        } 
+        timeV.tv_sec = 60 - ts.tm_sec;
         timeV.tv_usec = 0;
 
         FD_ZERO(&read_set);
         FD_SET(fd_request,&read_set);
+
+
 
         int cond = select(nfds,&read_set,NULL,NULL,&timeV);
         if (cond == 0){
@@ -81,6 +96,8 @@ int main(int argc, char **argv){
             return 1;
         }
         if(FD_ISSET(fd_request, &read_set)){
+            ts = *localtime(&current_time);
+            last_minute = ts.tm_min;
             uint16_t op_code= read_uint16(fd_request);
             //TODO A ne plus hardcoder
             if(fd_reply == -1) {
@@ -105,7 +122,7 @@ int main(int argc, char **argv){
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
-                    return 0;
+                    terminate(fd_reply,&running);
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
@@ -119,11 +136,10 @@ int main(int argc, char **argv){
                 default:
                     return 1;
                     break;
-                
             }
-        } else {
-            launch_executable_tasks(t, nb_tasks);
+
         }
+
     }
 
     free_task_array(t, &nb_tasks);
@@ -143,6 +159,13 @@ int main(int argc, char **argv){
         perror("close gohst");
         return EXIT_FAILURE;
     }
-
+    if(unlink(pipe_reply_file)== -1){
+        perror("delete pipe_reply");
+    }
+    if(unlink(pipe_request_file)== -1){
+        perror("delete pipe_request");
+    }
+    free(pipe_request_file);
+    free(pipe_reply_file);
     return EXIT_SUCCESS;
 }
