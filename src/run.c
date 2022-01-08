@@ -172,7 +172,6 @@ void launch_executable_tasks(task *t, int nb_tasks){
     for(int i = 0; i < nb_tasks; i++){
         if((current_timing.minutes & t[i].time.minutes) && (current_timing.hours & t[i].time.hours) && (current_timing.daysofweek & t[i].time.daysofweek)){
             //launch execute_task
-            printf("It is time for task %lu to be executed\n", t[i].taskid);
             execute_task(t[i]);
         }
     }
