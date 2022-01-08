@@ -164,6 +164,13 @@ void times_exitcodes(int fd, int fd_reply, task *t, int nb_tasks, uint64_t max_i
     write_pipebuf(fd_reply, buf, len);
 }
 
+void terminate(int fd_reply, int* running){
+    *running = 0;
+    char buf[sizeof(uint16_t)];
+    write_opcode(buf,SERVER_REPLY_OK);
+    write_pipebuf(fd_reply,buf,sizeof(uint16_t));
+}
+
 void stdout_stderr(int fd, int fd_reply, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
     int len;
     int n = 0;

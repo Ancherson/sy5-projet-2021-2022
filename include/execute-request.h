@@ -16,5 +16,6 @@ void remove_(int fd, int fd_reply, task *t, int len, int *nb_task);
 void times_exitcodes(int fd, int fd_reply, task *t, int len, uint64_t max_id);
 void stdout_stderr(int fd, int fd_reply, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id);
 void execute_task(task t);
+void terminate(int fd, int* run);
 
 #endif // EXECUTE_REQUEST_H

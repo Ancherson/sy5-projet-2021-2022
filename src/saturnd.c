@@ -58,13 +58,12 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    free(pipe_request_file);
-    free(pipe_reply_file);
 
     int nfds = fd_request+1;
     fd_set read_set;
     struct timeval timeV;
-    while(1){
+    int running = 1;
+    while(running){
 
         timeV.tv_sec = 10;
         timeV.tv_usec = 0;
@@ -105,7 +104,7 @@ int main(int argc, char **argv){
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
-                    return 0;
+                    terminate(fd_reply,&running);
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
@@ -143,6 +142,13 @@ int main(int argc, char **argv){
         perror("close gohst");
         return EXIT_FAILURE;
     }
-
+    if(unlink(pipe_reply_file)== -1){
+        perror("delete pipe_reply");
+    }
+    if(unlink(pipe_request_file)== -1){
+        perror("delete pipe_request");
+    }
+    free(pipe_request_file);
+    free(pipe_reply_file);
     return EXIT_SUCCESS;
 }
