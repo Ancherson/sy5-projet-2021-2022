@@ -45,3 +45,24 @@ int write_create(char * buf, char * minutes_str, char * hours_str, char * daysof
     n += write_commandline(buf+n, cmd);
     return n;
 }
+
+void write_pipebuf(int fd, char *buf, int len) {
+    int pipebuf = 32768;
+    int n = 0;
+    while(1) {
+        if(len < pipebuf) {
+            if(write(fd, buf + n, len) < len) {
+                dprintf(2, "Error write : %s\n", buf + n);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        } else {
+            if(write(fd, buf + n, pipebuf) < pipebuf) {
+                dprintf(2, "Error write : %s\n", buf + n);
+                exit(EXIT_FAILURE);
+            }
+            n += pipebuf;
+            len -= pipebuf;
+        }
+    }
+}

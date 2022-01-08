@@ -173,8 +173,17 @@ int read_list(int fd){
 }
 
 int read_times_exitcode(int fd){
-    if (read_reptype(fd) != 0){
-        return EXIT_FAILURE;   
+    int rep = read_reptype(fd);
+    if(rep != 0){
+        if(rep == 1){
+            uint16_t errcode = read_uint16(fd);
+            if(errcode == SERVER_REPLY_ERROR_NOT_FOUND){
+                printf("Erreur: il n'existe aucune tâche avec cet identifiant\n");
+            } else {
+                printf("Erreur read_times_exitcode errcode anormal\n");
+            }
+        }
+        return EXIT_FAILURE;
     }
     uint32_t nbRun = read_uint32(fd);
     for (uint32_t i = 0; i<nbRun;i++){

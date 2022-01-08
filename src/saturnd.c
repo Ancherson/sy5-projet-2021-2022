@@ -27,7 +27,6 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    char buf[BUFFER_SIZE];
     int nb_tasks;
     int len;
     uint64_t max_id;
@@ -88,23 +87,21 @@ int main(int argc, char **argv){
                 perror("open reply");
                 return EXIT_FAILURE;
             }
-            int x = 0;
             switch (op_code){
                 case CLIENT_REQUEST_LIST_TASKS :
-                    x += write_opcode(buf, SERVER_REPLY_OK);
-                    x += list(buf + x, t, nb_tasks);
+                    list(fd_reply, t, nb_tasks);
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
-                    x += create(fd_request,buf,&t,&len,&nb_tasks,&max_id);
+                    create(fd_request, fd_reply, &t, &len, &nb_tasks, &max_id);
                     break;
 
                 case CLIENT_REQUEST_REMOVE_TASK :
-                    x += remove_(fd_request, buf, t, len, &nb_tasks);
+                    remove_(fd_request, fd_reply, t, len, &nb_tasks);
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
-                    x += times_exitcodes(fd_request, buf, t, nb_tasks, max_id);
+                    times_exitcodes(fd_request, fd_reply, t, nb_tasks, max_id);
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
@@ -112,21 +109,17 @@ int main(int argc, char **argv){
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
-                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
+                    stdout_stderr(fd_request, fd_reply, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
                     break;
     
                 case CLIENT_REQUEST_GET_STDERR :
-                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
+                    stdout_stderr(fd_request, fd_reply, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
                     break;
                 
                 default:
                     return 1;
                     break;
                 
-            }
-            if(write(fd_reply,buf, x) < x) {
-                perror("write reply");
-                return EXIT_FAILURE;
             }
         } else {
             launch_executable_tasks(t, nb_tasks);
