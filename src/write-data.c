@@ -58,6 +58,8 @@ int write_create(char * buf, char * minutes_str, char * hours_str, char * daysof
     return n;
 }
 
+
+/* écrit dans fd, buf par bout de pipebuf */
 void write_pipebuf(int fd, char *buf, int len) {
     int pipebuf = 32768;
     int n = 0;

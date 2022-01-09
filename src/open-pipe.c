@@ -1,5 +1,6 @@
 #include "open-pipe.h"
 
+/* Mets dans pipe_request et dans pipe_reply les chaines de caractères de où ouvrir les pipes */
 int get_pipes_file(char *pipes_directory, char **pipe_request, char **pipe_reply) {
   //Si le pipes_directory n'est pas précisé, on choisi /tmp/USER/saturnd/pipes
   int b = (pipes_directory == NULL);
@@ -52,6 +53,7 @@ int get_pipes_file(char *pipes_directory, char **pipe_request, char **pipe_reply
   return 0;
 }
 
+/* Créer le dossier /tmp/USER/saturnd/pipes, qui servira de lieu d'ouverture des pipes */
 void create_tmp() {
     char path[4096];
     memset(path, 0, 4096);
@@ -72,6 +74,7 @@ void create_tmp() {
     }
 }
 
+/* Créer les pipes */
 void create_pipes(char *pipes_request, char *pipe_reply) {
     if(mkfifo(pipes_request, 0750) == -1 && errno != EEXIST) {
         dprintf(2, "Error mkfifo %s\n", pipes_request);
