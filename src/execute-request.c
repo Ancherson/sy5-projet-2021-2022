@@ -1,6 +1,7 @@
 #include "execute-request.h"
 
 
+/* Fonction auxiliaire de create qui crée le répertoire d'une tâche avec les fichiers nécessaires (data et times_exitcodes) */
 void do_create(task t) {
     if(mkdir("task", 0750) == -1 && errno != EEXIST) {
         perror("mkdir task");
@@ -46,7 +47,8 @@ void do_create(task t) {
     }
 }
 
-
+/* Crée la tâche demandée par une requête create puis répond au client avec la taskid
+ * (ajoute la tâche au tableau de tâches et crée son répertoire)*/
 int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_id) {
     timing time = read_timing(fd);
     commandline c = read_commandline(fd);
@@ -61,6 +63,7 @@ int create(int fd, char *buf, task **pt, int *len, int *nb_task, uint64_t *max_i
     return n;
 }
 
+/* Envoie au client la liste des taches avec leurs taskid, timing et commandline */
 int list(char *buf, task *t, uint32_t nb_tasks){
     int n = 0;
     uint32_t nbtasks = htobe32(nb_tasks);
@@ -75,6 +78,7 @@ int list(char *buf, task *t, uint32_t nb_tasks){
     return n;
 }
 
+/* Fonction auxiliaire de remove, supprime le fichier data de la tâche t */
 void do_remove(task t) {
     char path[100];
     memset(path, 0, 100);
@@ -86,6 +90,7 @@ void do_remove(task t) {
     }
 }
 
+/* Supprime la tâche du tableau de tâches ainsi que son fichier data*/
 int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
     int n = 0;
     uint64_t taskid = read_taskid(fd);
@@ -103,6 +108,7 @@ int remove_(int fd, char *buf, task *t, int len, int *nb_task) {
     return n;
 }
 
+/* Envoie au client les temps et codes de sortie de la tâche demandée par la requête */
 int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
     int n = 0;
     uint64_t taskid = read_taskid(fd);
@@ -142,6 +148,7 @@ int times_exitcodes(int fd, char *buf, task *t, int nb_tasks, uint64_t max_id){
     return n;
 }
 
+/* Envoie au client la sortie standard ou erreur de la tâche demandée par la requête */
 int stdout_stderr(int fd, char *buf, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
     int n = 0;
     uint64_t taskid = read_taskid(fd);
