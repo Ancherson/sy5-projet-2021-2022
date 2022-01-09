@@ -18,7 +18,7 @@ task *init_task(int *len, int *nb_task, uint64_t *max_id) {
         if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
             memset(path, 0, 1024);
             snprintf(path, 1024, "%s/%s/data", dirname, entry->d_name);
-            printf("%s\n", path);
+            //printf("%s\n", path);
             uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
             if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
                 dprintf(2, "Error get taskid %ld\n", taskid);
@@ -107,14 +107,15 @@ void execute_task(task t) {
             get_arg(arg, t.cmd);
             arg[t.cmd.argc] = NULL;
 
-            if(execvp(arg[0], arg) == -1) exit(EXIT_FAILURE);
+            if(execvp(arg[0], arg) == -1) exit(0xFFFF);
             
         } else {
             //Pere
             int wstatus;
             wait(&wstatus);
-
-            uint16_t exit_code = WEXITSTATUS(wstatus);
+            uint16_t exit_code;
+            if(WIFEXITED(wstatus)) exit_code = WEXITSTATUS(wstatus);
+            else exit_code = 0xFFFF;
             time_t end_time;
             time(&end_time);
 

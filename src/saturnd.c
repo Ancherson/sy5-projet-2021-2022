@@ -15,7 +15,17 @@ void print_task_array(task *t, int nb_tasks) {
     }
 }
 
+void launch() {
+    int r = fork();
+    if(r == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    if(r != 0) exit(0);
+}
+
 int main(int argc, char **argv){
+    launch();
     char *pipes_directory = NULL;
     if(argc < 2) create_tmp();
     else pipes_directory = argv[1];
@@ -89,7 +99,7 @@ int main(int argc, char **argv){
 
         int cond = select(nfds,&read_set,NULL,NULL,&timeV);
         if (cond == 0){
-            printf("J'ai rien lu \n");
+            //printf("J'ai rien lu \n");
         }
         if (cond == -1) {
             perror("PB select saturnd");
@@ -99,7 +109,6 @@ int main(int argc, char **argv){
             ts = *localtime(&current_time);
             last_minute = ts.tm_min;
             uint16_t op_code= read_uint16(fd_request);
-            //TODO A ne plus hardcoder
             if(fd_reply == -1) {
                 perror("open reply");
                 return EXIT_FAILURE;
