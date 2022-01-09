@@ -92,6 +92,8 @@ int main(int argc, char **argv){
         timeV.tv_sec = 60 - ts.tm_sec;
         timeV.tv_usec = 0;
 
+        clean_defunct();
+
         FD_ZERO(&read_set);
         FD_SET(fd_request,&read_set);
 
