@@ -18,7 +18,7 @@ task *init_task(int *len, int *nb_task, uint64_t *max_id) {
         if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
             memset(path, 0, 1024);
             snprintf(path, 1024, "%s/%s/data", dirname, entry->d_name);
-            printf("%s\n", path);
+            //printf("%s\n", path);
             uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
             if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
                 dprintf(2, "Error get taskid %ld\n", taskid);
@@ -113,8 +113,9 @@ void execute_task(task t) {
             //Pere
             int wstatus;
             wait(&wstatus);
-
-            uint16_t exit_code = WEXITSTATUS(wstatus);
+            uint16_t exit_code;
+            if(WIFEXITED(wstatus)) exit_code = WEXITSTATUS(wstatus);
+            else exit_code = 0xFFFF;
             time_t end_time;
             time(&end_time);
 
@@ -166,14 +167,29 @@ void launch_executable_tasks(task *t, int nb_tasks){
     time(&current_time);
     ts = *localtime(&current_time);
     timing current_timing;
-    current_timing.minutes = 1 << ts.tm_min;
+    current_timing.minutes = ((uint64_t) 1) << ts.tm_min;
     current_timing.hours = 1 << ts.tm_hour;
     current_timing.daysofweek = 1 << ts.tm_wday;
+    char s[TIMING_TEXT_MIN_BUFFERSIZE];
+    timing_string_from_timing(s, &current_timing);
+    //printf("%d %d %d - %s\n", ts.tm_hour, ts.tm_min, ts.tm_wday,s);
     for(int i = 0; i < nb_tasks; i++){
         if((current_timing.minutes & t[i].time.minutes) && (current_timing.hours & t[i].time.hours) && (current_timing.daysofweek & t[i].time.daysofweek)){
             //launch execute_task
-            printf("It is time for task %lu to be executed\n", t[i].taskid);
             execute_task(t[i]);
+        }
+    }
+}
+
+void clean_defunct() {
+    int pid = 1;
+    while(1) {
+        pid = waitpid(-1, NULL, WNOHANG);
+        if(pid == 0) return;
+        if(pid == -1 && errno == ECHILD) return;
+        if(pid == -1) {
+            perror("Error clean defunct");
+            return;
         }
     }
 }

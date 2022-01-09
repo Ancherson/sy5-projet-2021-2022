@@ -15,7 +15,17 @@ void print_task_array(task *t, int nb_tasks) {
     }
 }
 
+void launch() {
+    int r = fork();
+    if(r == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    if(r != 0) exit(0);
+}
+
 int main(int argc, char **argv){
+    launch();
     char *pipes_directory = NULL;
     if(argc < 2) create_tmp();
     else pipes_directory = argv[1];
@@ -27,7 +37,6 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    char buf[BUFFER_SIZE];
     int nb_tasks;
     int len;
     uint64_t max_id;
@@ -59,78 +68,89 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    free(pipe_request_file);
-    free(pipe_reply_file);
 
     int nfds = fd_request+1;
     fd_set read_set;
     struct timeval timeV;
-    while(1){
+    timeV.tv_sec = 60;
+    timeV.tv_usec = 0;
+    time_t current_time;
+    struct tm ts;
+    time(&current_time);
+    ts = *localtime(&current_time);
+    int last_minute = ts.tm_min;
+    int running = 1;
+    while(running){
+        time(&current_time);
+        ts = *localtime(&current_time);
+        if((timeV.tv_sec == 0 && timeV.tv_usec == 0) || last_minute != ts.tm_min){
+            launch_executable_tasks(t, nb_tasks);
+            time(&current_time);
+            ts = *localtime(&current_time);
 
-        timeV.tv_sec = 10;
+        } 
+        timeV.tv_sec = 60 - ts.tm_sec;
         timeV.tv_usec = 0;
+
+        clean_defunct();
 
         FD_ZERO(&read_set);
         FD_SET(fd_request,&read_set);
 
+
+
         int cond = select(nfds,&read_set,NULL,NULL,&timeV);
         if (cond == 0){
-            printf("J'ai rien lu \n");
+            //printf("J'ai rien lu \n");
         }
         if (cond == -1) {
             perror("PB select saturnd");
             return 1;
         }
         if(FD_ISSET(fd_request, &read_set)){
+            ts = *localtime(&current_time);
+            last_minute = ts.tm_min;
             uint16_t op_code= read_uint16(fd_request);
-            //TODO A ne plus hardcoder
             if(fd_reply == -1) {
                 perror("open reply");
                 return EXIT_FAILURE;
             }
-            int x = 0;
             switch (op_code){
                 case CLIENT_REQUEST_LIST_TASKS :
-                    x += write_opcode(buf, SERVER_REPLY_OK);
-                    x += list(buf + x, t, nb_tasks);
+                    list(fd_reply, t, nb_tasks);
                     break;
                 
                 case CLIENT_REQUEST_CREATE_TASK :            
-                    x += create(fd_request,buf,&t,&len,&nb_tasks,&max_id);
+                    create(fd_request, fd_reply, &t, &len, &nb_tasks, &max_id);
                     break;
 
                 case CLIENT_REQUEST_REMOVE_TASK :
-                    x += remove_(fd_request, buf, t, len, &nb_tasks);
+                    remove_(fd_request, fd_reply, t, len, &nb_tasks);
                     break;
         
                 case CLIENT_REQUEST_GET_TIMES_AND_EXITCODES :
-                    x += times_exitcodes(fd_request, buf, t, nb_tasks, max_id);
+                    times_exitcodes(fd_request, fd_reply, t, nb_tasks, max_id);
                     break;
 
                 case CLIENT_REQUEST_TERMINATE :
-                    return 0;
+                    terminate(fd_reply,&running);
                     break;
                 
                 case CLIENT_REQUEST_GET_STDOUT :
-                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
+                    stdout_stderr(fd_request, fd_reply, t, nb_tasks, CLIENT_REQUEST_GET_STDOUT, max_id);
                     break;
     
                 case CLIENT_REQUEST_GET_STDERR :
-                    x += stdout_stderr(fd_request, buf, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
+                    stdout_stderr(fd_request, fd_reply, t, nb_tasks, CLIENT_REQUEST_GET_STDERR, max_id);
                     break;
                 
                 default:
                     return 1;
                     break;
-                
             }
-            if(write(fd_reply,buf, x) < x) {
-                perror("write reply");
-                return EXIT_FAILURE;
-            }
-        } else {
-            launch_executable_tasks(t, nb_tasks);
+
         }
+
     }
 
     free_task_array(t, &nb_tasks);
@@ -150,6 +170,13 @@ int main(int argc, char **argv){
         perror("close gohst");
         return EXIT_FAILURE;
     }
-
+    if(unlink(pipe_reply_file)== -1){
+        perror("delete pipe_reply");
+    }
+    if(unlink(pipe_request_file)== -1){
+        perror("delete pipe_request");
+    }
+    free(pipe_request_file);
+    free(pipe_reply_file);
     return EXIT_SUCCESS;
 }

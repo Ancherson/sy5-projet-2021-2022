@@ -19,4 +19,6 @@ int write_timing(char * buf, timing t);
 int write_taskid(char * buf, uint64_t taskid);
 int write_create(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str, int argc, char **argv);
 
+void write_pipebuf(int fd, char *buf, int len);
+
 #endif // WRITEREQUEST_H
