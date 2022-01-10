@@ -1,5 +1,6 @@
 #ifndef READ_REPLY_H
 #define READ_REPLY_H
+#define PIPEBUF 512
 
 #include <stdio.h>
 #include <unistd.h>

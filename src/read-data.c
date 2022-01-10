@@ -189,9 +189,24 @@ char *read_string(int fd, uint32_t *l){
         perror("malloc read string");
         exit(EXIT_FAILURE);
     }
-    if(read(fd, str, len) < len) {
-        perror("read_string string");
-        exit(EXIT_FAILURE);
+    uint32_t length = len;
+    uint32_t n = 0;
+    while(1) {
+        if(length < PIPEBUF) {
+            if(read(fd, str + n, length) < length) {
+                dprintf(2, "Error read_string : %s\n", str + n);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        } else {
+            int r = read(fd, str + n, PIPEBUF);
+            if(r == -1) {
+                dprintf(2, "Error read_string : %s\n", str + n);
+                exit(EXIT_FAILURE);
+            }
+            n += r;
+            length -= r;
+        }
     }
     str[len] = '\0';
     *l = len;

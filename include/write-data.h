@@ -1,7 +1,7 @@
 #ifndef WRITEREQUEST_H
 #define WRITEREQUEST_H
 #define BUFFER_SIZE 32768
-
+#define PIPEBUF 512
 
 #include <unistd.h>
 #include <stdint.h>

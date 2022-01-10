@@ -61,22 +61,21 @@ int write_create(char * buf, char * minutes_str, char * hours_str, char * daysof
 
 /* écrit dans fd, buf par bout de pipebuf */
 void write_pipebuf(int fd, char *buf, int len) {
-    int pipebuf = 32768;
     int n = 0;
     while(1) {
-        if(len < pipebuf) {
+        if(len < PIPEBUF) {
             if(write(fd, buf + n, len) < len) {
                 dprintf(2, "Error write : %s\n", buf + n);
                 exit(EXIT_FAILURE);
             }
             break;
         } else {
-            if(write(fd, buf + n, pipebuf) < pipebuf) {
+            if(write(fd, buf + n, PIPEBUF) < PIPEBUF) {
                 dprintf(2, "Error write : %s\n", buf + n);
                 exit(EXIT_FAILURE);
             }
-            n += pipebuf;
-            len -= pipebuf;
+            n += PIPEBUF;
+            len -= PIPEBUF;
         }
     }
 }
