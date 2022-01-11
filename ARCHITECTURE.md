@@ -13,7 +13,7 @@ En revanche les lectures dans les tubes utilisent plusiseurs read puisqu'on ne c
 
 ### l'ouverture
 
-l'ouverture des tubes dans **cassini** est simple car les tubes ont déjà été ouverts dans **saturnd**. On ouvre d'abord la tube des requêtes en écriture puis celle des réponses en lecture.
+l'ouverture des tubes dans **cassini** est simple car les tubes ont déjà été ouverts dans **saturnd**. On ouvre d'abord le tube des requêtes en écriture puis celle des réponses en lecture.
 
 Dans **saturnd** en revanche l'ouverture des tubes est plus complexe. On ouvre dans un premier temps le tube de requête en  en lecture non-bloquante puis on crée un _écrivain fantôme_ en ouvrant la tube de requête en écriture. Cela est nécessaire car si il n'y pas d'écrivain sur le tube l'appel système à select n'est plus bloquant.
 Ensuite on ouvre le tube de réponse avec un _lecteur fantôme_ en l'ouvrant en lecture non-bloquante afin de pouvoir ouvrir le tube en écriture bloquante.

@@ -1,6 +1,7 @@
 #include "execute-request.h"
 
 
+/* Fonction auxiliaire de create qui crée le répertoire d'une tâche avec les fichiers nécessaires (data et times_exitcodes) */
 void do_create(task t) {
     if(mkdir("task", 0750) == -1 && errno != EEXIST) {
         perror("mkdir task");
@@ -46,7 +47,8 @@ void do_create(task t) {
     }
 }
 
-
+/* Crée la tâche demandée par une requête create puis répond au client avec la taskid
+ * (ajoute la tâche au tableau de tâches et crée son répertoire)*/
 void create(int fd, int fd_reply, task **pt, int *len, int *nb_task, uint64_t *max_id) {
     timing time = read_timing(fd);
     commandline c = read_commandline(fd);
@@ -63,6 +65,7 @@ void create(int fd, int fd_reply, task **pt, int *len, int *nb_task, uint64_t *m
     write_pipebuf(fd_reply, buf, buf_len);
 }
 
+/* Envoie au client la liste des taches avec leurs taskid, timing et commandline */
 void list(int fd_reply, task *t, uint32_t nb_tasks){
     int len = sizeof(uint16_t)+sizeof(uint32_t)+nb_tasks*(sizeof(uint64_t)+TIMING_SIZE+sizeof(uint32_t));
     for(int i = 0; i < nb_tasks; i++){
@@ -84,6 +87,7 @@ void list(int fd_reply, task *t, uint32_t nb_tasks){
     write_pipebuf(fd_reply, buf, len);
 }
 
+/* Fonction auxiliaire de remove, supprime le fichier data de la tâche t */
 void do_remove(task t) {
     char path[100];
     memset(path, 0, 100);
@@ -95,6 +99,7 @@ void do_remove(task t) {
     }
 }
 
+/* Supprime la tâche du tableau de tâches ainsi que son fichier data*/
 void remove_(int fd, int fd_reply, task *t, int len, int *nb_task) {
     int n = 0;
     int buf_len;
@@ -119,6 +124,7 @@ void remove_(int fd, int fd_reply, task *t, int len, int *nb_task) {
     write_pipebuf(fd_reply, buf, buf_len);
 }
 
+/* Envoie au client les temps et codes de sortie de la tâche demandée par la requête */
 void times_exitcodes(int fd, int fd_reply, task *t, int nb_tasks, uint64_t max_id){
     int len;
     int n = 0;
@@ -171,6 +177,7 @@ void terminate(int fd_reply, int* running){
     write_pipebuf(fd_reply,buf,sizeof(uint16_t));
 }
 
+/* Envoie au client la sortie standard ou erreur de la tâche demandée par la requête */
 void stdout_stderr(int fd, int fd_reply, task *t, int nb_tasks, uint16_t opcode, uint64_t max_id){
     int len;
     int n = 0;

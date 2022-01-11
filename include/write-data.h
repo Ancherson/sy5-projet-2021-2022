@@ -1,7 +1,7 @@
 #ifndef WRITEREQUEST_H
 #define WRITEREQUEST_H
 #define BUFFER_SIZE 32768
-
+#define PIPEBUF 512
 
 #include <unistd.h>
 #include <stdint.h>
@@ -10,6 +10,8 @@
 
 #include "timing-text-io.h"
 #include "commandline.h"
+
+/* Ensemble de fonctions qui permettent l'écriture de données */
 
 int write_opcode(char * buf, uint16_t opcode);
 int write_timing_from_strings(char * buf, char * minutes_str, char * hours_str, char * daysofweek_str);
