@@ -85,10 +85,6 @@ int main(int argc, char * argv[]) {
     }
   }
 
-  // --------
-  // | TODO |
-  // --------
-
   //Creation des chaines de caractères pour l'ouverture des FIFO
   char *pipe_request_file = NULL;
   char *pipe_reply_file = NULL;
@@ -109,6 +105,7 @@ int main(int argc, char * argv[]) {
 
   free(pipe_request_file);
 
+  //buffer qui stocke le message à envoyer
   char buf[BUFFER_SIZE];
 
   //Dans tous les cas on écrit le opcode
@@ -129,6 +126,7 @@ int main(int argc, char * argv[]) {
       break;
   }
 
+  //On écrit la requête dans le tube
   if(write(fd_request, buf, n) < n) {
     printf("PBM ECRITURE REQUETE!\n");
     free(pipe_reply_file);
@@ -154,7 +152,7 @@ int main(int argc, char * argv[]) {
   }
   free(pipe_reply_file);
 
-  //Toute la partie où on read le reste
+  //On read la reply et on stocke l'exit-code à renvoyer
   int exit_code = EXIT_SUCCESS;
   switch(operation){
     case CLIENT_REQUEST_LIST_TASKS:
@@ -178,7 +176,7 @@ int main(int argc, char * argv[]) {
       break;
   }
 
-
+  //On renvoie l'exit-code
   return exit_code;
 
  error:
