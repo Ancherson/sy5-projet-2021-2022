@@ -1,5 +1,7 @@
 #include "run.h"
 
+/* Initialise le tableau de tâches à partir des répertoires des tâches situés dans le répertoire task
+ * Renvoie un pointeur vers le tableau de task */
 task *init_task(int *len, int *nb_task, uint64_t *max_id) {
     *len = 1;
     *nb_task = 0;
@@ -18,7 +20,6 @@ task *init_task(int *len, int *nb_task, uint64_t *max_id) {
         if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
             memset(path, 0, 1024);
             snprintf(path, 1024, "%s/%s/data", dirname, entry->d_name);
-            //printf("%s\n", path);
             uint64_t taskid = strtoull(entry->d_name, &strtoull_endp, 10);
             if (strtoull_endp == entry->d_name || strtoull_endp[0] != '\0') {
                 dprintf(2, "Error get taskid %ld\n", taskid);
@@ -51,6 +52,10 @@ task *init_task(int *len, int *nb_task, uint64_t *max_id) {
     return t;
 }
 
+/* Crée un sous-processus qui:
+ * -lance une exécution de la tâche t
+ * -redirige la sortie standard et erreur de cette tâche vers les fichiers stdout et stderr dans le répertoire de la tâche
+ * -récupère le temps et le code de sortie à la fin de l'éxécution de la tâche et les ajoute au fichier times_exitcodes */
 void execute_task(task t) {
 
     int rep = fork();
@@ -161,6 +166,7 @@ void execute_task(task t) {
     }
 }
 
+/* Lance l'exécution des tâches dont le timing coïncide avec le temps actuel */
 void launch_executable_tasks(task *t, int nb_tasks){
     time_t current_time;
     struct tm ts;
@@ -172,7 +178,6 @@ void launch_executable_tasks(task *t, int nb_tasks){
     current_timing.daysofweek = 1 << ts.tm_wday;
     char s[TIMING_TEXT_MIN_BUFFERSIZE];
     timing_string_from_timing(s, &current_timing);
-    //printf("%d %d %d - %s\n", ts.tm_hour, ts.tm_min, ts.tm_wday,s);
     for(int i = 0; i < nb_tasks; i++){
         if((current_timing.minutes & t[i].time.minutes) && (current_timing.hours & t[i].time.hours) && (current_timing.daysofweek & t[i].time.daysofweek)){
             //launch execute_task
@@ -181,6 +186,7 @@ void launch_executable_tasks(task *t, int nb_tasks){
     }
 }
 
+/* Nettoie les processus zombies */
 void clean_defunct() {
     int pid = 1;
     while(1) {
