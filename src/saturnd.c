@@ -64,14 +64,6 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    //fermeture du lecteur fantome
-    if(close(fd_reply_gohst) == -1) {
-        perror("close reply_gohst");
-        return EXIT_FAILURE;
-    }
-
-
-
 
     int nfds = fd_request+1;
     fd_set read_set;
@@ -180,6 +172,12 @@ int main(int argc, char **argv){
     }
     if(close(fd_gohst) == -1) {
         perror("close gohst");
+        return EXIT_FAILURE;
+    }
+
+    //fermeture du lecteur fantome
+    if(close(fd_reply_gohst) == -1) {
+        perror("close reply_gohst");
         return EXIT_FAILURE;
     }
 
