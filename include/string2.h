@@ -15,6 +15,7 @@ typedef struct string {
   uint32_t len;
   char *str;
 } string; 
+typedef struct string string;
 
 /* Ensemble de fonctions permettant la manipulation d'une string */
 int create_string(string *dest, int len, char *str);
