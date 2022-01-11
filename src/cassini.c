@@ -19,60 +19,6 @@ const char usage_info[] = "\
      -p PIPES_DIR -> look for the pipes in PIPES_DIR (default: /tmp/<USERNAME>/saturnd/pipes)\n\
 ";
 
-int get_pipes_file(char *pipes_directory, char **pipe_request, char **pipe_reply) {
-  //Si le pipes_directory n'est pas précisé, on choisi /tmp/USER/saturnd/pipes
-  if(pipes_directory == NULL) {
-    char *user = getenv("USER");
-    char *dir_pre  = "/tmp/";
-    char *dir_next = "/saturnd/pipes";
-    pipes_directory = malloc(strlen(dir_pre) + strlen(user) + strlen(dir_next) + 1);
-    if(pipes_directory == NULL) {
-      perror("PBM malloc pipes_directory");
-      return 1;
-    }
-    strcpy(pipes_directory, dir_pre);
-    strcat(pipes_directory, user);
-    strcat(pipes_directory, dir_next);
-    pipes_directory[strlen(dir_pre) + strlen(user) + strlen(dir_next)] = '\0';
-  }
-
-  //Creation des chaines de caractères pour l'ouverture des FIFO
-  char *str_pipe_request = "saturnd-request-pipe";
-  char *str_pipe_reply = "saturnd-reply-pipe";
-
-  char *pipe_request_file = malloc(strlen(pipes_directory) + strlen(str_pipe_request) + 2);
-  if(pipe_request_file == NULL) {
-    perror("PBM malloc pipe_request_file");
-    free(pipes_directory);
-    return 1;
-  }
-
-  char *pipe_reply_file = malloc(strlen(pipes_directory) + strlen(str_pipe_reply) + 2);
-  if(pipe_request_file == NULL) {
-    perror("PBM malloc pipe_reply_file");
-    free(pipes_directory);
-    free(pipe_request_file);
-    return 1;
-  }
-
-  strcpy(pipe_request_file,pipes_directory);
-  strcat(pipe_request_file, "/");
-  strcat(pipe_request_file,str_pipe_request);
-  pipe_request_file[strlen(pipes_directory) + strlen(str_pipe_request) + 1] = '\0';
-
-  strcpy(pipe_reply_file,pipes_directory);
-  strcat(pipe_reply_file, "/");
-  strcat(pipe_reply_file,str_pipe_reply);
-  pipe_reply_file[strlen(pipes_directory) + strlen(str_pipe_reply) + 1] = '\0';
-
-  free(pipes_directory);
-
-  *pipe_request = pipe_request_file;
-  *pipe_reply = pipe_reply_file;
-
-  return 0;
-}
-
 int main(int argc, char * argv[]) {
   errno = 0;
   
@@ -139,17 +85,11 @@ int main(int argc, char * argv[]) {
     }
   }
 
-  // --------
-  // | TODO |
-  // --------
-
   //Creation des chaines de caractères pour l'ouverture des FIFO
   char *pipe_request_file = NULL;
   char *pipe_reply_file = NULL;
-  if(get_pipes_file(pipes_directory, &pipe_request_file, &pipe_reply_file)) {
-    printf("Erreur construction chaine de caractere des fichiers pipes\n");
-    exit(EXIT_FAILURE);
-  }
+  get_pipes_file(pipes_directory, &pipe_request_file, &pipe_reply_file);
+  if(pipes_directory != NULL) free(pipes_directory);
   
   //Ouverture du FIFO request
   int fd_request = open(pipe_request_file, O_WRONLY, 0750);
@@ -165,6 +105,7 @@ int main(int argc, char * argv[]) {
 
   free(pipe_request_file);
 
+  //buffer qui stocke le message à envoyer
   char buf[BUFFER_SIZE];
 
   //Dans tous les cas on écrit le opcode
@@ -185,6 +126,7 @@ int main(int argc, char * argv[]) {
       break;
   }
 
+  //On écrit la requête dans le tube
   if(write(fd_request, buf, n) < n) {
     printf("PBM ECRITURE REQUETE!\n");
     free(pipe_reply_file);
@@ -210,7 +152,7 @@ int main(int argc, char * argv[]) {
   }
   free(pipe_reply_file);
 
-  //Toute la partie où on read le reste
+  //On read la reply et on stocke l'exit-code à renvoyer
   int exit_code = EXIT_SUCCESS;
   switch(operation){
     case CLIENT_REQUEST_LIST_TASKS:
@@ -234,7 +176,7 @@ int main(int argc, char * argv[]) {
       break;
   }
 
-
+  //On renvoie l'exit-code
   return exit_code;
 
  error:

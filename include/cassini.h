@@ -15,8 +15,9 @@
 
 #include "string2.h"
 #include "commandline.h"
-#include "write-request.h"
-#include "read-request.h"
+#include "write-data.h"
+#include "read-data.h"
+#include "open-pipe.h"
 
 #include "client-request.h"
 #include "server-reply.h"
